@@ -1,0 +1,45 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="col-md-5 col-lg-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4 p-sm-5">
+            <div class="text-center mb-4">
+                <h1 class="logo-text">Dabang</h1>
+                <p class="text-muted">Управление складом</p>
+            </div>
+
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    Имя пользователя и пароль не совпадают. Попробуйте снова.
+                </div>
+            {% endif %}
+
+            {% if next and not user.is_authenticated %}
+                 <div class="alert alert-info" role="alert">
+                    Пожалуйста, войдите, чтобы увидеть эту страницу.
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Имя пользователя:</label>
+                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" class="form-control" required id="id_username">
+                </div>
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">Пароль:</label>
+                    <input type="password" name="password" autocomplete="current-password" class="form-control" required id="id_password">
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

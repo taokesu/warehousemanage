@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Журнал документов{% endblock %}
+
+{% block page_title %}Журнал документов{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="h5 mb-0">Все документы</div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: #5d50e6; border-color: #5d50e6;">
+                Создать документ
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'incoming_transaction_create' %}">Приход</a></li>
+                <li><a class="dropdown-item" href="{% url 'outgoing_transaction_create' %}">Расход</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Номер</th>
+                        <th>Дата</th>
+                        <th>Сотрудник</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# ИСПРАВЛЕНО: Использование правильной переменной `page_obj` из контекста #}
+                    {% for doc in page_obj %}
+                    <tr>
+                        <td>{{ doc.get_document_type_display }}</td>
+                        <td>№ {{ doc.id }}</td>
+                        <td>{{ doc.document_date|date:"d.m.Y H:i" }}</td>
+                        <td>{{ doc.staff.get_full_name_initials }}</td>
+                        <td class="text-end"><a href="{% url 'document_detail' doc.id %}" class="btn btn-sm btn-outline-secondary">Просмотр</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">Документов еще не было.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Пагинация #}
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

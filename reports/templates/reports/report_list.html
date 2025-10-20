@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Список отчетов{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Доступные отчеты</h1>
+    <div class="list-group">
+        {% for report in reports %}
+            <a href="{% url report.url_name %}" class="list-group-item list-group-item-action">
+                {{ report.title }}
+            </a>
+        {% empty %}
+            <p>Нет доступных отчетов.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

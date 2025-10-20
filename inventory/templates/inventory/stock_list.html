@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Остатки на складах{% endblock %}
+
+{% block page_title %}Остатки на складах{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="h5 mb-0">Все остатки товаров</div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Склад</th>
+                        <th>Количество</th>
+                        <th>Мин. остаток</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        {# ИСПРАВЛЕНО: Использование правильных имен полей из модели Product #}
+                        <td>{{ stock.product.product_name }}</td>
+                        <td>{{ stock.product.serial_number|default:"б/н" }}</td>
+                        <td>{{ stock.warehouse.name }}</td>
+                        <td>
+                            {% if stock.quantity <= stock.product.minimum_stock_level %}
+                                <span class="badge bg-danger">{{ stock.quantity }}</span>
+                            {% else %}
+                                {{ stock.quantity }}
+                            {% endif %}
+                        </td>
+                        <td>{{ stock.product.minimum_stock_level }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">На складах пока нет товаров.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

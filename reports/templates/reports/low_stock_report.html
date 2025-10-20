@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчет о товарах для закупки{% endblock %}
+
+{% block page_title %}Отчет по товарам, требующим закупки{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        Критические остатки
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Склад</th>
+                        <th>Текущий остаток</th>
+                        <th>Минимальный остаток</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in low_stock_products %}
+                    <tr>
+                        <td>{{ stock.product.name }}</td>
+                        <td>{{ stock.warehouse.name }}</td>
+                        <td>
+                            <span class="badge bg-danger">{{ stock.quantity }}</span>
+                        </td>
+                        <td>{{ stock.product.minimum_stock_level }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">Нет товаров, требующих закупки.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'report_list' %}" class="btn btn-secondary">Назад к списку отчетов</a>
+</div>
+{% endblock %}

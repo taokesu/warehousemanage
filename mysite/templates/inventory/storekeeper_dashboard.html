@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Рабочий стол кладовщика{% endblock %}
+
+{% block page_title %}Панель операций{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-deck">
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <i class="fas fa-dolly-flatbed fa-4x text-primary mb-3"></i>
+                        <h5 class="card-title">Оприходование товара</h5>
+                        <p class="card-text">Регистрация поступления новых товаров на склад от поставщиков.</p>
+                        <a href="{% url 'incoming_transaction' %}" class="btn btn-primary">Начать приемку</a>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shipping-fast fa-4x text-success mb-3"></i>
+                        <h5 class="card-title">Отгрузка товара</h5>
+                        <p class="card-text">Оформление отгрузки товаров со склада клиентам.</p>
+                        <a href="{% url 'outgoing_transaction' %}" class="btn btn-success">Начать отгрузку</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

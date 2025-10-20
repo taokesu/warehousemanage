@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Панель управления{% endblock %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+
+<!-- KPI Cards Section -->
+<div class="row g-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card bg-light-pink h-100">
+            <div class="kpi-icon">
+                <i class="bi bi-cash-coin"></i>
+            </div>
+            <div class="kpi-value">{{ today_revenue|floatformat:0 }}₽</div>
+            <div class="kpi-title">Today's Sales</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card bg-light-yellow h-100">
+            <div class="kpi-icon">
+                <i class="bi bi-cart-check"></i>
+            </div>
+            <div class="kpi-value">{{ today_orders_count }}</div>
+            <div class="kpi-title">Total Orders</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card bg-light-green h-100">
+            <div class="kpi-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="kpi-value">{{ today_products_sold_count }}</div>
+            <div class="kpi-title">Products Sold</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card bg-light-purple h-100">
+            <div class="kpi-icon">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="kpi-value">{{ today_profit|floatformat:0 }}₽</div>
+            <div class="kpi-title">Profit</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Tables Row -->
+<div class="row g-4 mt-2">
+    <!-- Revenue Chart -->
+    <div class="col-12">
+        <div class="card h-100">
+            <div class="card-header">
+                Анализ выручки за неделю
+            </div>
+            <div class="card-body" style="height: 300px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Documents Table -->
+    <div class="col-lg-7 mt-4">
+        <div class="card h-100">
+            <div class="card-header">
+                Последние документы
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Номер</th>
+                                <th>Дата</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in recent_documents %}
+                            <tr>
+                                <td>{{ doc.get_document_type_display }}</td>
+                                <td>#{{ doc.document_number }}</td>
+                                <td>{{ doc.document_date|date:"d.m.Y H:i" }}</td>
+                                <td class="text-end"><a href="{% url 'document_detail' doc.id %}" class="btn btn-sm btn-outline-primary">Просмотр</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">Документов еще нет.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Products Table -->
+    <div class="col-lg-5 mt-4">
+        <div class="card h-100">
+            <div class="card-header">
+                Товары с критическим остатком
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Остаток</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in low_stock_products %}
+                            <tr>
+                                <td>
+                                    <div>{{ stock.product.name }}</div>
+                                    <small class="text-muted">{{ stock.warehouse.name }}</small>
+                                </td>
+                                <td><span class="badge bg-danger">{{ stock.quantity }} / {{ stock.product.minimum_stock_level }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center py-4">Нет товаров с низким остатком.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Fetch and render Revenue Chart
+    fetch("{% url 'revenue-chart-data' %}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (window.myRevenueChart) {
+                window.myRevenueChart.destroy();
+            }
+            window.myRevenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Выручка за день',
+                        data: data.data,
+                        borderColor: '#5d50e6',
+                        backgroundColor: 'rgba(93, 80, 230, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#5d50e6',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                            }
+                        },
+                        x: {
+                           grid: {
+                                display: false,
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching revenue chart data:', error));
+});
+</script>
+{% endblock %}

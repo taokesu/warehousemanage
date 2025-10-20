@@ -1,0 +1,224 @@
+/* --- General Body & Layout --- */
+body {
+    background-color: #f9faff; /* Lighter, cleaner background */
+    color: #333;
+    display: flex;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-right: 1px solid #eef0f4;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .logo {
+    font-weight: 700;
+    text-align: left;
+    margin-bottom: 40px;
+    font-size: 28px;
+    color: #5d50e6; /* Primary color from template */
+}
+
+.sidebar .nav-link {
+    color: #7a7d92; /* Muted text color for links */
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link i {
+    margin-right: 15px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .nav-link:hover {
+    color: #5d50e6;
+    background-color: #f0efff;
+}
+
+.sidebar .nav-link.active {
+    background-color: #5d50e6; /* Primary color background */
+    color: #fff;
+}
+
+/* --- Main Content --- */
+.main-content {
+    margin-left: 250px;
+    padding: 30px;
+    width: calc(100% - 250px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #343a40;
+}
+
+/* --- Card Overhaul (Based on Template) --- */
+.card {
+    border: none; /* No borders */
+    border-radius: 16px; /* Softer corners */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 1.5rem 1.5rem 0 1.5rem; /* More padding */
+    color: #343a40;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* --- Button Overrides --- */
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #5d50e6;
+    border-color: #5d50e6;
+}
+
+.btn-primary:hover {
+    background-color: #4a40b8;
+    border-color: #4a40b8;
+}
+
+.btn-secondary {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #5a6268;
+}
+
+
+/* --- KPI Card Specific Styles --- */
+.kpi-card {
+    border-radius: 12px;
+    padding: 1.25rem;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi-card .kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 1rem;
+}
+
+.kpi-card .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.kpi-card .kpi-title {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* KPI Card Color Variants */
+.kpi-card.bg-light-pink {
+    background-color: #fff0f0;
+}
+.kpi-card.bg-light-pink .kpi-icon {
+    background-color: #ffdede;
+    color: #ff5b5b;
+}
+
+.kpi-card.bg-light-yellow {
+    background-color: #fff8e1;
+}
+.kpi-card.bg-light-yellow .kpi-icon {
+    background-color: #ffecb3;
+    color: #ffc107;
+}
+
+.kpi-card.bg-light-green {
+    background-color: #e8f5e9;
+}
+.kpi-card.bg-light-green .kpi-icon {
+    background-color: #c8e6c9;
+    color: #4caf50;
+}
+
+.kpi-card.bg-light-purple {
+    background-color: #f3e5f5;
+}
+.kpi-card.bg-light-purple .kpi-icon {
+    background-color: #e1bee7;
+    color: #9c27b0;
+}
+
+/* --- Table Styles (Corrected for Readability) --- */
+.table {
+    width: 100%;
+    border-collapse: collapse; /* Essential for borders */
+}
+
+.table th {
+    font-weight: 600;
+    color: #7a7d92;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    padding: 0.75rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid #eef0f4; /* Header separator */
+}
+
+.table td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #eef0f4; /* Row separator */
+    background-color: #ffffff;
+    color: #333;
+}
+
+.table tbody tr:hover td {
+    background-color: #f9faff; /* Subtle hover for better UX */
+}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчет по продажам{% endblock %}
+
+{% block page_title %}Отчет по продажам и рентабельности{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="start_date" class="form-label">Дата с:</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+            </div>
+            <div class="col-auto">
+                <label for="end_date" class="form-label">Дата по:</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+            </div>
+            <div class="col-auto mt-auto">
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <a href="{% url 'sales_profitability_report' %}" class="btn btn-secondary">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="kpi-card bg-light-green h-100">
+            <div class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="kpi-value">{{ total_revenue|floatformat:2 }}₽</div>
+            <div class="kpi-title">Общая выручка</div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <div class="kpi-card bg-light-yellow h-100">
+            <div class="kpi-icon"><i class="bi bi-receipt"></i></div>
+            <div class="kpi-value">{{ total_cost|floatformat:2 }}₽</div>
+            <div class="kpi-title">Общая себестоимость</div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <div class="kpi-card bg-light-purple h-100">
+            <div class="kpi-icon"><i class="bi bi-gem"></i></div>
+            <div class="kpi-value">{{ total_profit|floatformat:2 }}₽</div>
+            <div class="kpi-title">Общая прибыль</div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Table -->
+<div class="card">
+    <div class="card-header">
+        Детализация продаж
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Дата операции</th>
+                        <th>Товар</th>
+                        <th>Кол-во</th>
+                        <th>Цена закупки</th>
+                        <th>Цена продажи</th>
+                        <th>Прибыль</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sales_items %}
+                    <tr>
+                        <td>{{ item.outgoing_transaction.document.document_date|date:"d.m.Y H:i" }}</td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.cost_price|floatformat:2 }}₽</td>
+                        <td>{{ item.sale_price|floatformat:2 }}₽</td>
+                        <td>{{ item.profit|floatformat:2 }}₽</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">Нет данных о продажах за выбранный период.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'report_list' %}" class="btn btn-secondary">Назад к списку отчетов</a>
+</div>
+{% endblock %}

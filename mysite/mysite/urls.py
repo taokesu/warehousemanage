@@ -6,17 +6,34 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 Examples:
 Function views
     1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+    2. Add a URL to urlpatterns:  path('\', views.home, name='home')
 Class-based views
     1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+    2. Add a URL to urlpatterns:  path('\', Home.as_view(), name='home')
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import RedirectView
+from dashboard.views import custom_logout, permission_denied_view
+from inventory.views import CustomLoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Аутентификация и права доступа
+    path('accounts/login/', CustomLoginView.as_view(), name='login'),
+    path('accounts/logout/', custom_logout, name='logout'),
+    path('permission-denied/', permission_denied_view, name='permission_denied'),
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    # Приложения
+    path('inventory/', include('inventory.urls')),
+    path('reports/', include('reports.urls')),
+    path('dashboard/', include('dashboard.urls')),
+
+    # Перенаправление с корневого URL
+    path('', RedirectView.as_view(url='/dashboard/', permanent=True)),
 ]
