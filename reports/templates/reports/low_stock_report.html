@@ -1,47 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Отчет о товарах для закупки{% endblock %}
+{% block title %}{{ report_title }}{% endblock %}
 
-{% block page_title %}Отчет по товарам, требующим закупки{% endblock %}
+{% block page_title %}{{ report_title }}{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        Критические остатки
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Список товаров, требующих закупки</span>
+        <a href="?pdf=1" class="btn btn-primary btn-sm">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Скачать PDF
+        </a>
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Склад</th>
-                        <th>Текущий остаток</th>
-                        <th>Минимальный остаток</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stock in low_stock_products %}
-                    <tr>
-                        <td>{{ stock.product.name }}</td>
-                        <td>{{ stock.warehouse.name }}</td>
-                        <td>
-                            <span class="badge bg-danger">{{ stock.quantity }}</span>
-                        </td>
-                        <td>{{ stock.product.minimum_stock_level }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-5">Нет товаров, требующих закупки.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% if items %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th>Артикул</th>
+                            <th>Склад</th>
+                            <th class="text-center">Текущий остаток</th>
+                            <th class="text-center">Минимальный порог</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.product.sku }}</td>
+                            <td>{{ item.warehouse.name }}</td>
+                            <td class="text-center"><span class="badge bg-danger">{{ item.quantity }}</span></td>
+                            <td class="text-center">{{ item.product.minimum_stock_level }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-success text-center" role="alert">
+                Всех товаров на складе достаточно. Товаров для закупки нет.
+            </div>
+        {% endif %}
     </div>
-</div>
-
-<div class="mt-4">
-    <a href="{% url 'report_list' %}" class="btn btn-secondary">Назад к списку отчетов</a>
 </div>
 {% endblock %}

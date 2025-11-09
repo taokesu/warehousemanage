@@ -98,37 +98,20 @@
         </div>
     </div>
 
-    <!-- Low Stock Products Table -->
+    <!-- Reports Section -->
     <div class="col-lg-5 mt-4">
         <div class="card h-100">
             <div class="card-header">
-                Товары с критическим остатком
+                Отчеты
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Товар</th>
-                                <th>Остаток</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stock in low_stock_products %}
-                            <tr>
-                                <td>
-                                    <div>{{ stock.product.name }}</div>
-                                    <small class="text-muted">{{ stock.warehouse.name }}</small>
-                                </td>
-                                <td><span class="badge bg-danger">{{ stock.quantity }} / {{ stock.product.minimum_stock_level }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="2" class="text-center py-4">Нет товаров с низким остатком.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <p>Здесь собраны основные отчеты по работе склада.</p>
+                <div class="list-group">
+                    <a href="{% url 'reports:low_stock_report' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        Товары для закупки
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </a>
+                    <!-- Другие отчеты будут добавлены сюда -->
                 </div>
             </div>
         </div>
