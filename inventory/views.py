@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
@@ -161,17 +161,16 @@ def document_pdf_view(request, document_id):
         except Document.outgoingtransaction.RelatedObjectDoesNotExist:
             pass
 
-    # ИЗМЕНЕНО: Формируем абсолютный путь к файлу шрифта
-    font_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'DejaVuSans.ttf')
+    # ИЗМЕНЕНО: Создаем URI для файла шрифта, чтобы избежать конфликтов
+    font_path = (settings.BASE_DIR / 'static' / 'fonts' / 'DejaVuSans.ttf').as_uri()
 
     context = {
         'document': document,
         'transaction': transaction_details,
         'items': items,
-        'font_path': font_path, # Передаем путь в контекст
+        'font_path': font_path,
     }
     
-    # Мы больше не используем link_callback, поэтому пока уберем его
     pdf = render_to_pdf('inventory/pdf/document_pdf.html', context)
     
     if pdf:
