@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
@@ -9,7 +11,7 @@ from django.http import HttpResponse
 
 from .models import Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, IncomingItem, OutgoingTransaction, OutgoingItem, Client
 from .forms import IncomingForm, OutgoingForm, CustomAuthenticationForm
-from .utils import render_to_pdf # <-- Наша новая утилита
+from .utils import render_to_pdf
 
 
 class CustomLoginView(LoginView):
@@ -101,7 +103,6 @@ def outgoing_transaction_view(request):
         form = OutgoingForm()
     return render(request, 'inventory/outgoing_form.html', {'form': form})
 
-
 def document_list(request):
     document_list = Document.objects.select_related('staff').all().order_by('-document_date')
     paginator = Paginator(document_list, 15)
@@ -160,16 +161,20 @@ def document_pdf_view(request, document_id):
         except Document.outgoingtransaction.RelatedObjectDoesNotExist:
             pass
 
+    # ИЗМЕНЕНО: Формируем абсолютный путь к файлу шрифта
+    font_path = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'DejaVuSans.ttf')
+
     context = {
         'document': document,
         'transaction': transaction_details,
         'items': items,
+        'font_path': font_path, # Передаем путь в контекст
     }
     
+    # Мы больше не используем link_callback, поэтому пока уберем его
     pdf = render_to_pdf('inventory/pdf/document_pdf.html', context)
     
     if pdf:
-        # Добавляем заголовок, чтобы файл скачивался, а не открывался в браузере
         filename = f"document_{document.pk}_{document.document_date.strftime('%Y-%m-%d')}.pdf"
         pdf['Content-Disposition'] = f"attachment; filename='{filename}'"
         return pdf
