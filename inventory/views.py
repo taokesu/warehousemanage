@@ -161,8 +161,8 @@ def document_pdf_view(request, document_id):
         except Document.outgoingtransaction.RelatedObjectDoesNotExist:
             pass
 
-    # ИЗМЕНЕНО: Создаем URI для файла шрифта, чтобы избежать конфликтов
-    font_path = (settings.BASE_DIR / 'static' / 'fonts' / 'DejaVuSans.ttf').as_uri()
+    # ИЗМЕНЕНО: Используем новый шрифт LiberationSans-Regular.ttf
+    font_path = (settings.BASE_DIR / 'static' / 'fonts' / 'LiberationSans-Regular.ttf').as_uri()
 
     context = {
         'document': document,

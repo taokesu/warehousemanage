@@ -5,12 +5,13 @@
     <title>Документ №{{ document.pk }}</title>
     <style>
         @font-face {
-            font-family: "DejaVu Sans";
-            /* ИЗМЕНЕНО: Используем абсолютный путь, переданный из view */
+            /* ИЗМЕНЕНО: Используем новое семейство шрифтов */
+            font-family: "Liberation Sans";
             src: url("{{ font_path }}"); 
         }
         body {
-            font-family: "DejaVu Sans", sans-serif;
+            /* ИЗМЕНЕНО: Применяем новый шрифт */
+            font-family: "Liberation Sans", sans-serif;
             margin: 0;
             padding: 20px;
             font-size: 12px;
