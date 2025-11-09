@@ -1,24 +1,24 @@
-from io import BytesIO
-from django.http import HttpResponse
 from django.template.loader import get_template
-from xhtml2pdf import pisa
+from django.http import HttpResponse
+from weasyprint import HTML
+from django.conf import settings
 
-def render_to_pdf(template_src, context_dict={}):
+def render_to_pdf(template_path, context_dict={}):
     """
-    Функция для рендеринга HTML-шаблона в PDF-документ.
+    Рендерит HTML-шаблон в PDF с помощью WeasyPrint.
     """
-    template = get_template(template_src)
-    html = template.render(context_dict)
-    
-    result = BytesIO()
-    
-    # ИЗМЕНЕНО: Убрали link_callback, т.к. путь к шрифту передается напрямую
-    pdf = pisa.pisaDocument(
-        BytesIO(html.encode("UTF-8")), 
-        dest=result
-    )
-    
-    if not pdf.err:
-        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    try:
+        template = get_template(template_path)
+        html_string = template.render(context_dict)
+
+        response = HttpResponse(content_type='application/pdf')
         
-    return None
+        # WeasyPrint использует base_url для поиска статических файлов (шрифты, CSS)
+        base_url = settings.BASE_DIR.as_uri() + "/"
+        
+        HTML(string=html_string, base_url=base_url).write_pdf(response)
+        
+        return response
+    except Exception as e:
+        # Возвращаем текстовый ответ с ошибкой для отладки
+        return HttpResponse(f"Ошибка при генерации PDF: {e}", status=500)

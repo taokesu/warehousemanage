@@ -1,4 +1,3 @@
-import base64
 from pathlib import Path
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,7 +11,7 @@ from django.http import HttpResponse
 
 from .models import Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, IncomingItem, OutgoingTransaction, OutgoingItem, Client
 from .forms import IncomingForm, OutgoingForm, CustomAuthenticationForm
-from .utils import render_to_pdf
+from .utils import render_to_pdf # Убедимся, что импортируем нашу новую утилиту
 
 
 class CustomLoginView(LoginView):
@@ -162,24 +161,22 @@ def document_pdf_view(request, document_id):
         except Document.outgoingtransaction.RelatedObjectDoesNotExist:
             pass
 
-    # ИЗМЕНЕНО: Читаем, кодируем шрифт в Base64 и передаем его как данные
-    font_path = settings.BASE_DIR / 'static' / 'fonts' / 'LiberationSans-Regular.ttf'
-    with open(font_path, "rb") as font_file:
-        font_data = font_file.read()
-        font_base64 = base64.b64encode(font_data).decode("utf-8")
-
+    # ИЗМЕНЕНО: Контекст стал намного проще. 
+    # WeasyPrint сам найдет статические файлы.
     context = {
         'document': document,
         'transaction': transaction_details,
         'items': items,
-        'font_base64': font_base64, # Передаем закодированные данные
     }
     
     pdf = render_to_pdf('inventory/pdf/document_pdf.html', context)
     
-    if pdf:
+    if pdf and pdf.status_code == 200:
         filename = f"document_{document.pk}_{document.document_date.strftime('%Y-%m-%d')}.pdf"
+        # Изменено: content-disposition теперь устанавливается по-другому, так как утилита возвращает HttpResponse
         pdf['Content-Disposition'] = f"attachment; filename='{filename}'"
         return pdf
     
-    return HttpResponse("Ошибка при генерации PDF файла.", status=400)
+    # Если render_to_pdf вернул ошибку, мы просто вернем этот ответ пользователю
+    return pdf if pdf else HttpResponse("Неизвестная ошибка при генерации PDF.", status=500)
+
