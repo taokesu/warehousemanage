@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: url(https://github.com/dejavu-fonts/dejavu-fonts/blob/master/ttf/DejaVuSans.ttf?raw=true);
+        }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h5 {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .text-end {
+            text-align: right;
+        }
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .col-md-6 {
+            float: left;
+            width: 48%;
+            padding: 1%;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Поступления</h5>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th class="text-end">Количество</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in incoming_items %}
+                    <tr>
+                        <td>{{ item.product__name }}</td>
+                        <td class="text-end">{{ item.total_incoming }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" style="text-align:center;">Нет данных.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-6">
+            <h5>Отгрузки</h5>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th class="text-end">Количество</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in outgoing_items %}
+                    <tr>
+                        <td>{{ item.product__name }}</td>
+                        <td class="text-end">{{ item.total_outgoing }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" style="text-align:center;">Нет данных.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

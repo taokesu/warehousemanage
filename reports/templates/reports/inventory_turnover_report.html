@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ report_title }}{% endblock %}
+
+{% block page_title %}{{ report_title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Движение товаров за период</span>
+        <a href="?pdf=1" class="btn btn-primary btn-sm">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Скачать PDF
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Поступления</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th class="text-end">Количество</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in incoming_items %}
+                            <tr>
+                                <td>{{ item.product__name }}</td>
+                                <td class="text-end">{{ item.total_incoming }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">Нет данных о поступлениях.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5>Отгрузки</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th class="text-end">Количество</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in outgoing_items %}
+                            <tr>
+                                <td>{{ item.product__name }}</td>
+                                <td class="text-end">{{ item.total_outgoing }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">Нет данных об отгрузках.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

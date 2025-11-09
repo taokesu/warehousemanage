@@ -31,7 +31,7 @@
             </li>
             {% if user.is_authenticated and user.role.role_name == 'Менеджер' %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'report_list' %}">
+                <a class="nav-link" href="{% url 'reports:low_stock_report' %}">
                     <i class="bi bi-graph-up"></i> Отчеты
                 </a>
             </li>
