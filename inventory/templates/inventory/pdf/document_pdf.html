@@ -5,12 +5,11 @@
     <title>Документ №{{ document.pk }}</title>
     <style>
         @font-face {
-            /* ИЗМЕНЕНО: Используем новое семейство шрифтов */
             font-family: "Liberation Sans";
-            src: url("{{ font_path }}"); 
+            /* ИЗМЕНЕНО: Внедряем шрифт напрямую через Data URI */
+            src: url("data:font/truetype;base64,{{ font_base64 }}"); 
         }
         body {
-            /* ИЗМЕНЕНО: Применяем новый шрифт */
             font-family: "Liberation Sans", sans-serif;
             margin: 0;
             padding: 20px;
