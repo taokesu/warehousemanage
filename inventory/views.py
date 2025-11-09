@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+
 from .models import Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, IncomingItem, OutgoingTransaction, OutgoingItem, Client
 from .forms import IncomingForm, OutgoingForm, CustomAuthenticationForm
+from .utils import render_to_pdf # <-- Наша новая утилита
 
 
 class CustomLoginView(LoginView):
@@ -52,7 +56,6 @@ def incoming_transaction_view(request):
                         product=product,
                         quantity=quantity
                     )
-                    # ИСПРАВЛЕНО: Явный расчет и сохранение итоговой суммы
                     incoming_trans.total_amount = product.purchase_price * quantity
                     incoming_trans.save()
 
@@ -88,7 +91,6 @@ def outgoing_transaction_view(request):
                         product=product,
                         quantity=quantity
                     )
-                    # ИСПРАВЛЕНО: Явный расчет и сохранение итоговой суммы
                     outgoing_trans.total_amount = product.selling_price * quantity
                     outgoing_trans.save()
 
@@ -98,6 +100,7 @@ def outgoing_transaction_view(request):
     else:
         form = OutgoingForm()
     return render(request, 'inventory/outgoing_form.html', {'form': form})
+
 
 def document_list(request):
     document_list = Document.objects.select_related('staff').all().order_by('-document_date')
@@ -132,3 +135,43 @@ def document_detail(request, document_id):
         'items': items,
     }
     return render(request, 'inventory/document_detail.html', context)
+
+
+@login_required
+def document_pdf_view(request, document_id):
+    """
+    Генерирует PDF-версию для указанного документа.
+    """
+    document = get_object_or_404(Document, pk=document_id)
+    transaction_details = None
+    items = []
+
+    if document.document_type == Document.DocumentType.INCOMING:
+        try:
+            transaction_details = document.incomingtransaction
+            items = transaction_details.items.select_related('product').all()
+        except Document.incomingtransaction.RelatedObjectDoesNotExist:
+            pass
+            
+    elif document.document_type == Document.DocumentType.OUTGOING:
+        try:
+            transaction_details = document.outgoingtransaction
+            items = transaction_details.items.select_related('product').all()
+        except Document.outgoingtransaction.RelatedObjectDoesNotExist:
+            pass
+
+    context = {
+        'document': document,
+        'transaction': transaction_details,
+        'items': items,
+    }
+    
+    pdf = render_to_pdf('inventory/pdf/document_pdf.html', context)
+    
+    if pdf:
+        # Добавляем заголовок, чтобы файл скачивался, а не открывался в браузере
+        filename = f"document_{document.pk}_{document.document_date.strftime('%Y-%m-%d')}.pdf"
+        pdf['Content-Disposition'] = f"attachment; filename='{filename}'"
+        return pdf
+    
+    return HttpResponse("Ошибка при генерации PDF файла.", status=400)

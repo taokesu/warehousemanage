@@ -11,7 +11,10 @@
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ document.get_document_type_display }} от {{ document.document_date|date:"d.m.Y H:i" }}</h5>
-                    <a href="{% url 'document_list' %}" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                    <div>
+                        <a href="{% url 'document_pdf' document.id %}" class="btn btn-sm btn-danger">Экспорт в PDF</a>
+                        <a href="{% url 'document_list' %}" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -38,11 +41,9 @@
                         <tbody>
                             {% for item in items %}
                             <tr>
-                                {# ИСПРАВЛЕНО: Использование правильных имен полей #}
                                 <td>{{ item.product.product_name }}</td>
                                 <td class="text-center">{{ item.quantity }}</td>
                                 
-                                {# ИСПРАВЛЕНО: Логика для цены #}
                                 {% if document.document_type == 'Приход' %}
                                     <td class="text-end">{{ item.product.purchase_price|floatformat:2 }} ₽</td>
                                     <td class="text-end">{{ item.line_total_purchase|floatformat:2 }} ₽</td>
@@ -60,7 +61,6 @@
                         <tfoot>
                             <tr class="fw-bold">
                                 <td colspan="3" class="text-end">Итого:</td>
-                                {# ИСПРАВЛЕНО: Использование `transaction` для общей суммы #}
                                 <td class="text-end">{{ transaction.total_amount|floatformat:2 }} ₽</td>
                             </tr>
                         </tfoot>

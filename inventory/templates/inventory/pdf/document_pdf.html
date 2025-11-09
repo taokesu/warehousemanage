@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Документ №{{ document.pk }}</title>
+    <style>
+        @font-face {
+            font-family: "DejaVu Sans";
+            src: url("/path/to/fonts/DejaVuSans.ttf"); /* Укажите правильный путь к шрифту */
+        }
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            color: #333;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .document-details {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .document-details p {
+            margin: 5px 0;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .items-table th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            text-align: right;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ document.get_document_type_display }} №{{ document.pk }}</h1>
+        <p>от {{ document.document_date|date:"d.m.Y H:i" }}</p>
+    </div>
+
+    <div class="document-details">
+        <p><strong>Сотрудник:</strong> {{ document.staff.get_full_name }}</p>
+        {% if transaction.supplier %}
+            <p><strong>Поставщик:</strong> {{ transaction.supplier.name }}</p>
+        {% endif %}
+        {% if transaction.client %}
+            <p><strong>Клиент:</strong> {{ transaction.client.name }}</p>
+        {% endif %}
+        {% if transaction.warehouse %}
+            <p><strong>Склад:</strong> {{ transaction.warehouse.name }}</p>
+        {% endif %}
+    </div>
+
+    <h3>Состав документа:</h3>
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Количество</th>
+                <th>Цена за ед.</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    {% if document.document_type == 'IN' %}
+                        <td>{{ item.product.purchase_price }} руб.</td>
+                        <td>{{ item.total_item_price }} руб.</td>
+                    {% else %}
+                        <td>{{ item.product.selling_price }} руб.</td>
+                        <td>{{ item.total_item_price }} руб.</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Итоговая сумма: {{ transaction.total_amount }} руб.</p>
+    </div>
+
+</body>
+</html>
