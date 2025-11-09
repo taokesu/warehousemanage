@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: url(https://github.com/dejavu-fonts/dejavu-fonts/blob/master/ttf/DejaVuSans.ttf?raw=true);
+        }
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 12px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-size: 13px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: .25em .4em;
+            font-size: 75%;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .25rem;
+        }
+        .bg-danger {
+            color: #fff;
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    
+    {% if items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Артикул</th>
+                    <th>Склад</th>
+                    <th class="text-center">Текущий остаток</th>
+                    <th class="text-center">Минимальный порог</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.product__name }}</td>
+                    <td>{{ item.product__sku }}</td>
+                    <td>{{ item.warehouse__name }}</td>
+                    <td class="text-center"><span class="badge bg-danger">{{ item.quantity }}</span></td>
+                    <td class="text-center">{{ item.product__minimum_stock_level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center;">Нет данных для отображения.</p>
+    {% endif %}
+
+</body>
+</html>

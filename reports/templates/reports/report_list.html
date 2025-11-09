@@ -10,24 +10,14 @@
         Доступные отчеты
     </div>
     <div class="list-group list-group-flush">
-        <a href="{% url 'reports:low_stock_report' %}" class="list-group-item list-group-item-action">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">Отчет по товарам, требующим закупки</h5>
-            </div>
-            <p class="mb-1">Показывает все товары на складе, количество которых меньше или равно минимальному порогу.</p>
-        </a>
-        <a href="{% url 'reports:inventory_turnover_report' %}" class="list-group-item list-group-item-action">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">Отчет по движению товаров</h5>
-            </div>
-            <p class="mb-1">Анализ поступлений и отгрузок товаров за период.</p>
-        </a>
-        <a href="#" class="list-group-item list-group-item-action disabled text-muted" tabindex="-1" aria-disabled="true">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">Анализ продаж <span class="badge bg-secondary">Скоро</span></h5>
-            </div>
-            <p class="mb-1">Детальный отчет по продажам, прибыли и популярным товарам.</p>
-        </a>
+        {% for report in reports %}
+            <a href="{% url report.url %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ report.title }}</h5>
+                </div>
+                <p class="mb-1">{{ report.description }}</p>
+            </a>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

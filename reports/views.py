@@ -10,8 +10,32 @@ def report_list(request):
     """
     Отображает список всех доступных отчетов.
     """
+    # Данные для отчетов, которые мы "восстанавливаем"
+    reports = [
+        {
+            'url': 'reports:low_stock_report',
+            'title': 'Отчет по товарам, требующим закупки',
+            'description': 'Показывает все товары на складе, количество которых меньше или равно минимальному порогу.'
+        },
+        {
+            'url': 'reports:stock_report', 
+            'title': 'Отчет по остаткам товаров',
+            'description': 'Полная сводка по текущим остаткам всех товаров на всех складах.'
+        },
+        {
+            'url': 'reports:sales_profitability_report',
+            'title': 'Отчет по продажам и рентабельности',
+            'description': 'Анализ продаж, прибыли и популярных товаров за период.'
+        },
+        {
+            'url': 'reports:inventory_turnover_report',
+            'title': 'Отчет по движению товаров',
+            'description': 'Анализ поступлений и отгрузок товаров за период.'
+        }
+    ]
     context = {
-        'report_title': 'Список отчетов'
+        'report_title': 'Список отчетов',
+        'reports': reports
     }
     return render(request, 'reports/report_list.html', context)
 
@@ -20,15 +44,19 @@ def low_stock_report(request):
     """
     Отчет по товарам, количество которых на складе ниже минимального порога.
     """
-    low_stock_items = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')).select_related('product', 'warehouse')
-    
+    # Преобразуем queryset сразу в список словарей, чтобы гарантировать наличие всех данных
+    low_stock_items = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')) \
+                                 .select_related('product', 'warehouse') \
+                                 .values('product__name', 'product__sku', 'warehouse__name', 'quantity', 'product__minimum_stock_level')
+
     context = {
         'items': low_stock_items,
         'report_title': 'Отчет по товарам, требующим закупки'
     }
 
     if 'pdf' in request.GET:
-        pdf = render_to_pdf('reports/pdf/report_template.html', context)
+        # Для PDF нам нужен свой, более простой шаблон
+        pdf = render_to_pdf('reports/pdf/low_stock_report_pdf.html', context)
         if pdf:
             response = HttpResponse(pdf, content_type='application/pdf')
             filename = "low_stock_report.pdf"
@@ -39,12 +67,37 @@ def low_stock_report(request):
 
     return render(request, 'reports/low_stock_report.html', context)
 
+# --- Восстановленные отчеты ---
+
+@login_required
+def stock_report(request):
+    """
+    Отчет по текущим остаткам товаров на всех складах.
+    """
+    stocks = Stock.objects.select_related('product', 'warehouse').order_by('product__name')
+    context = {
+        'items': stocks,
+        'report_title': 'Отчет по остаткам товаров'
+    }
+    return render(request, 'reports/stock_report.html', context)
+
+@login_required
+def sales_profitability_report(request):
+    """
+    Отчет по продажам и рентабельности (заглушка).
+    """
+    # Это пока заглушка, как и было раньше
+    context = {
+        'report_title': 'Отчет по продажам и рентабельности'
+    }
+    return render(request, 'reports/sales_profitability_report.html', context)
+
+
 @login_required
 def inventory_turnover_report(request):
     """
     Отчет по движению товаров за период.
     """
-    # Для простоты пока берем все движения
     incoming = IncomingItem.objects.values('product__name').annotate(total_incoming=Sum('quantity')).order_by()
     outgoing = OutgoingItem.objects.values('product__name').annotate(total_outgoing=Sum('quantity')).order_by()
 
