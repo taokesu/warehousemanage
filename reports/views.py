@@ -45,7 +45,7 @@ def low_stock_report(request):
     """
     low_stock_items = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')) \
                                  .select_related('product', 'warehouse') \
-                                 .values('product__product_name', 'product__sku', 'warehouse__name', 'quantity', 'product__minimum_stock_level')
+                                 .values('product__product_name', 'product__serial_number', 'warehouse__name', 'quantity', 'product__minimum_stock_level')
 
     context = {
         'items': low_stock_items,
