@@ -10,7 +10,6 @@ def report_list(request):
     """
     Отображает список всех доступных отчетов.
     """
-    # Данные для отчетов, которые мы "восстанавливаем"
     reports = [
         {
             'url': 'reports:low_stock_report',
@@ -44,10 +43,9 @@ def low_stock_report(request):
     """
     Отчет по товарам, количество которых на складе ниже минимального порога.
     """
-    # Преобразуем queryset сразу в список словарей, чтобы гарантировать наличие всех данных
     low_stock_items = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')) \
                                  .select_related('product', 'warehouse') \
-                                 .values('product__name', 'product__sku', 'warehouse__name', 'quantity', 'product__minimum_stock_level')
+                                 .values('product__product_name', 'product__sku', 'warehouse__name', 'quantity', 'product__minimum_stock_level')
 
     context = {
         'items': low_stock_items,
@@ -55,7 +53,6 @@ def low_stock_report(request):
     }
 
     if 'pdf' in request.GET:
-        # Для PDF нам нужен свой, более простой шаблон
         pdf = render_to_pdf('reports/pdf/low_stock_report_pdf.html', context)
         if pdf:
             response = HttpResponse(pdf, content_type='application/pdf')
@@ -67,14 +64,13 @@ def low_stock_report(request):
 
     return render(request, 'reports/low_stock_report.html', context)
 
-# --- Восстановленные отчеты ---
 
 @login_required
 def stock_report(request):
     """
     Отчет по текущим остаткам товаров на всех складах.
     """
-    stocks = Stock.objects.select_related('product', 'warehouse').order_by('product__name')
+    stocks = Stock.objects.select_related('product', 'warehouse').order_by('product__product_name')
     context = {
         'items': stocks,
         'report_title': 'Отчет по остаткам товаров'
@@ -86,7 +82,6 @@ def sales_profitability_report(request):
     """
     Отчет по продажам и рентабельности (заглушка).
     """
-    # Это пока заглушка, как и было раньше
     context = {
         'report_title': 'Отчет по продажам и рентабельности'
     }
@@ -98,8 +93,8 @@ def inventory_turnover_report(request):
     """
     Отчет по движению товаров за период.
     """
-    incoming = IncomingItem.objects.values('product__name').annotate(total_incoming=Sum('quantity')).order_by()
-    outgoing = OutgoingItem.objects.values('product__name').annotate(total_outgoing=Sum('quantity')).order_by()
+    incoming = IncomingItem.objects.values('product__product_name').annotate(total_incoming=Sum('quantity')).order_by()
+    outgoing = OutgoingItem.objects.values('product__product_name').annotate(total_outgoing=Sum('quantity')).order_by()
 
     context = {
         'incoming_items': incoming,
