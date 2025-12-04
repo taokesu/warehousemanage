@@ -2,103 +2,61 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Документ №{{ document.pk }}</title>
+    <title>{{ document.get_document_type_display }} №{{ document.id }}</title>
     <style>
         @font-face {
-            font-family: "Liberation Sans";
-            /* ИЗМЕНЕНО: Возвращаем простой путь. WeasyPrint его найдет. */
-            src: url("/static/fonts/LiberationSans-Regular.ttf"); 
+            font-family: 'DejaVu Sans';
+            src: url('https://github.com/dejavu-fonts/dejavu-fonts/blob/master/ttf/DejaVuSans.ttf?raw=true');
         }
-        body {
-            font-family: "Liberation Sans", sans-serif;
-            margin: 0;
-            padding: 20px;
-            font-size: 12px;
-            color: #333;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            margin: 0;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .document-details {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
-        }
-        .document-details p {
-            margin: 5px 0;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .items-table th, .items-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        .items-table th {
-            background-color: #f2f2f2;
-        }
-        .footer {
-            text-align: right;
-            font-weight: bold;
-        }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; }
+        h1 { text-align: center; font-size: 18px; }
+        .header { margin-bottom: 20px; }
+        .header p { margin: 2px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .total-row td { font-weight: bold; font-size: 14px; text-align: right; }
     </style>
 </head>
 <body>
+    <h1>{{ document.get_document_type_display }} №{{ document.id }}</h1>
     <div class="header">
-        <h1>{{ document.get_document_type_display }} №{{ document.pk }}</h1>
-        <p>от {{ document.document_date|date:"d.m.Y H:i" }}</p>
-    </div>
-
-    <div class="document-details">
-        <p><strong>Сотрудник:</strong> {{ document.staff.get_full_name }}</p>
-        {% if transaction.supplier %}
-            <p><strong>Поставщик:</strong> {{ transaction.supplier.name }}</p>
+        <p><strong>Дата:</strong> {{ document.date|date:"d.m.Y H:i" }}</p>
+        {% if document.document_type == 'OUT' %}
+            <p><strong>Сотрудник:</strong> {{ document.employee.get_full_name }}</p>
+            <p><strong>Клиент:</strong> {{ document.client }}</p>
+        {% else %}
+            <p><strong>Поставщик:</strong> {{ document.provider }}</p>
         {% endif %}
-        {% if transaction.client %}
-            <p><strong>Клиент:</strong> {{ transaction.client.name }}</p>
-        {% endif %}
-        {% if transaction.warehouse %}
-            <p><strong>Склад:</strong> {{ transaction.warehouse.name }}</p>
-        {% endif %}
+        <p><strong>Склад:</strong> {{ document.warehouse.name }}</p>
     </div>
 
     <h3>Состав документа:</h3>
-    <table class="items-table">
+    <table>
         <thead>
             <tr>
                 <th>Товар</th>
-                <th>Количество</th>
-                <th>Цена за ед.</th>
-                <th>Сумма</th>
+                <th style="text-align: right;">Количество</th>
+                <th style="text-align: right;">Цена за ед.</th>
+                <th style="text-align: right;">Сумма</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
-                <tr>
-                    <td>{{ item.product.name }}</td>
-                    <td>{{ item.quantity }}</td>
-                    {% if document.document_type == 'IN' %}
-                        <td>{{ item.product.purchase_price }} руб.</td>
-                        <td>{{ item.total_item_price }} руб.</td>
-                    {% else %}
-                        <td>{{ item.product.selling_price }} руб.</td>
-                        <td>{{ item.total_item_price }} руб.</td>
-                    {% endif %}
-                </tr>
+            <tr>
+                <td>{{ item.product.product_name }}</td>
+                <td style="text-align: right;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.price|floatformat:2 }} руб.</td>
+                <td style="text-align: right;">{{ item.total_sum|floatformat:2 }} руб.</td>
+            </tr>
             {% endfor %}
         </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="3">Итоговая сумма:</td>
+                <td>{{ total_sum|floatformat:2 }} руб.</td>
+            </tr>
+        </tfoot>
     </table>
-
-    <div class="footer">
-        <p>Итоговая сумма: {{ transaction.total_amount }} руб.</p>
-    </div>
-
 </body>
 </html>

@@ -1,11 +1,84 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}{{ report_title }}{% endblock %}
 
 {% block page_title %}{{ report_title }}{% endblock %}
 
 {% block content %}
-<div class="alert alert-info" role="alert">
-  Этот отчет находится в разработке.
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Общая выручка</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ total_revenue|intcomma }} руб.</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary mb-3">
+            <div class="card-header">Себестоимость</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ total_cogs|intcomma }} руб.</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Валовая прибыль</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ gross_profit|intcomma }} руб.</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Количество продаж</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ total_sales }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Топ-5 самых продаваемых товаров
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for product in top_selling_products %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ product.product__product_name }}
+                            <span class="badge bg-primary rounded-pill">{{ product.total_quantity }} шт.</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Нет данных о продажах.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Топ-5 самых прибыльных товаров
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for product in top_profitable_products %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ product.product__product_name }}
+                            <span class="badge bg-success rounded-pill">{{ product.total_profit|intcomma }} руб.</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Нет данных о прибыльности.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

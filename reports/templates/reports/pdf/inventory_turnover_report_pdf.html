@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        @font-face {
+            font-family: 'DejaVu Sans';
+            src: url(https://github.com/dejavu-fonts/dejavu-fonts/blob/master/ttf/DejaVuSans.ttf?raw=true);
+        }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; }
+        h1 { text-align: center; font-size: 16px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-size: 13px; }
+        .text-center { text-align: center; }
+        .text-success { color: #198754; }
+        .text-danger { color: #dc3545; }
+        .fw-bold { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    
+    {% if turnover_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Артикул</th>
+                    <th class="text-center">Поступило</th>
+                    <th class="text-center">Отгружено</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product_name, data in turnover_data.items %}
+                <tr>
+                    <td>{{ product_name }}</td>
+                    <td>{{ data.serial_number }}</td>
+                    <td class="text-center text-success fw-bold">{{ data.incoming }}</td>
+                    <td class="text-center text-danger fw-bold">{{ data.outgoing }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center;">Нет данных о движении товаров.</p>
+    {% endif %}
+
+</body>
+</html>
