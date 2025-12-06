@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ document.document_type }} №{{ document.id }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .info { margin-bottom: 20px; }
+        .info p { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .total-row td { font-weight: bold; text-align: right; background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h1>{{ document.document_type }} №{{ document.id }}</h1>
+
+    <div class="info">
+        <p><strong>Дата:</strong> {{ formatted_date }}</p>
+        {% if document.document_type == 'Приход' %}
+        <p><strong>Поставщик:</strong> {{ transaction.supplier.name }}</p>
+        {% else %}
+        <p><strong>Клиент:</strong> {{ transaction.customer.name }}</p>
+        {% endif %}
+        <p><strong>Склад:</strong> {{ transaction.warehouse.name }}</p>
+    </div>
+
+    <p><strong>Состав документа:</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th style="text-align: center;">Количество</th>
+                <th style="text-align: right;">Цена за ед.</th>
+                <th style="text-align: right;">Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in transactions %}
+            <tr>
+                <td>{{ item.product.product_name }}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.price|floatformat:2 }} руб.</td>
+                <td style="text-align: right;">{{ item.total_cost|floatformat:2 }} руб.</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3">Итоговая сумма:</td>
+                <td style="text-align: right;">{{ total_sum|floatformat:2 }} руб.</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
