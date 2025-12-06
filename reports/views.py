@@ -94,19 +94,17 @@ def sales_profitability_report(request):
     """
     outgoing_items = OutgoingItem.objects.select_related('product')
     
-    # Corrected line: F('price') instead of F('цена')
-    total_revenue = outgoing_items.aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
+    total_revenue = outgoing_items.aggregate(total=Sum(F('quantity') * F('product__selling_price')))['total'] or 0
     total_cogs = outgoing_items.aggregate(total=Sum(F('quantity') * F('product__purchase_price')))['total'] or 0
     gross_profit = total_revenue - total_cogs
-    total_sales = outgoing_items.values('document').distinct().count()
+    total_sales = outgoing_items.values('outgoing_transaction').distinct().count()
 
     top_selling_products = OutgoingItem.objects.values('product__product_name') \
         .annotate(total_quantity=Sum('quantity')) \
         .order_by('-total_quantity')[:5]
 
-    # Corrected line: F('price') instead of F('цена')
     top_profitable_products = OutgoingItem.objects.select_related('product').annotate(
-        profit=ExpressionWrapper((F('price') - F('product__purchase_price')) * F('quantity'), output_field=DecimalField())
+        profit=ExpressionWrapper((F('product__selling_price') - F('product__purchase_price')) * F('quantity'), output_field=DecimalField())
     ).values('product__product_name').annotate(total_profit=Sum('profit')).order_by('-total_profit')[:5]
 
     context = {
