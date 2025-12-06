@@ -1,9 +1,16 @@
+from django.contrib.auth.views import LoginView
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from inventory.models import Document, Transaction
 from django.utils.dateformat import DateFormat
+
+class CustomLoginView(LoginView):
+    """Представление для входа пользователей."""
+    template_name = 'registration/login.html'
+    form_class = AuthenticationForm
 
 @login_required
 def document_list(request):
