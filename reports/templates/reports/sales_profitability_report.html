@@ -17,45 +17,73 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Общая выручка</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="card-title">{{ total_revenue|intcomma }} руб.</h4>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Общая выручка</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_revenue|intcomma }} руб.</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-ruble-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-secondary mb-3">
-            <div class="card-header">Себестоимость</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-secondary shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="card-title">{{ total_cogs|intcomma }} руб.</h4>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Себестоимость</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_cogs|intcomma }} руб.</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-receipt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Валовая прибыль</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="card-title">{{ gross_profit|intcomma }} руб.</h4>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Валовая прибыль</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ gross_profit|intcomma }} руб.</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-header">Количество продаж</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
             <div class="card-body">
-                <h4 class="card-title">{{ total_sales }}</h4>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Количество продаж</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_sales }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                Топ-5 самых продаваемых товаров
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Топ-5 самых продаваемых товаров</h6>
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
@@ -71,10 +99,10 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                Топ-5 самых прибыльных товаров
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Топ-5 самых прибыльных товаров</h6>
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Артикул</th>
+                <th>Склад</th>
+                <th>Текущий остаток</th>
+                <th>Минимальный остаток</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product__product_name }}</td>
+                <td>{{ item.product__serial_number }}</td>
+                <td>{{ item.warehouse__name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.product__minimum_stock_level }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">Все товары в достаточном количестве.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        .summary-container { display: flex; justify-content: space-around; margin-bottom: 30px; }
+        .summary-box { 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            background-color: #f8f9fa;
+            text-align: center;
+            width: 22%;
+        }
+        .table-container { display: flex; justify-content: space-between; }
+        .table-wrapper { width: 48%; }
+        h2 { text-align: center; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+
+    <div class="summary-container">
+        <div class="summary-box"><strong>Общая выручка</strong><br>{{ total_revenue }} руб.</div>
+        <div class="summary-box"><strong>Себестоимость</strong><br>{{ total_cogs }} руб.</div>
+        <div class="summary-box"><strong>Валовая прибыль</strong><br>{{ gross_profit }} руб.</div>
+        <div class="summary-box"><strong>Кол-во продаж</strong><br>{{ total_sales }}</div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-wrapper">
+            <h2>Топ-5 продаваемых</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Кол-во</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in top_selling_products %}
+                    <tr>
+                        <td>{{ product.product__product_name }}</td>
+                        <td style="text-align: center;">{{ product.total_quantity }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" style="text-align: center;">Нет данных.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="table-wrapper">
+            <h2>Топ-5 прибыльных</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Прибыль</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in top_profitable_products %}
+                    <tr>
+                        <td>{{ product.product__product_name }}</td>
+                        <td style="text-align: right;">{{ product.total_profit }} руб.</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" style="text-align: center;">Нет данных.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

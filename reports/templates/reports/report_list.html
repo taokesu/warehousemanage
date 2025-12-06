@@ -1,23 +1,25 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ report_title }}{% endblock %}
+{% block title %}Список отчетов{% endblock %}
 
-{% block page_title %}{{ report_title }}{% endblock %}
+{% block page_title %}
+    <h1 class="h3 mb-4 text-gray-800">{{ report_title }}</h1>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        Доступные отчеты
+<div class="row">
+    {% for report in reports %}
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ report.title }}</h5>
+                <p class="card-text">{{ report.description }}</p>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+                <a href="{% url report.url %}" class="btn btn-primary">Перейти к отчету</a>
+            </div>
+        </div>
     </div>
-    <div class="list-group list-group-flush">
-        {% for report in reports %}
-            <a href="{% url report.url %}" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ report.title }}</h5>
-                </div>
-                <p class="mb-1">{{ report.description }}</p>
-            </a>
-        {% endfor %}
-    </div>
+    {% endfor %}
 </div>
 {% endblock %}
