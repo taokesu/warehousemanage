@@ -2,47 +2,49 @@
 
 {% block title %}{{ report_title }}{% endblock %}
 
-{% block page_title %}{{ report_title }}{% endblock %}
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0 text-gray-800">{{ report_title }}</h1>
+    <a href="?pdf=true" class="btn btn-primary btn-icon-split">
+        <span class="icon text-white-50">
+            <i class="fas fa-download"></i>
+        </span>
+        <span class="text">Скачать PDF</span>
+    </a>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Список товаров, требующих закупки</span>
-        <a href="?pdf=1" class="btn btn-primary btn-sm">
-            <i class="bi bi-file-earmark-pdf-fill"></i> Скачать PDF
-        </a>
-    </div>
+<div class="card shadow mb-4">
     <div class="card-body">
-        {% if items %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Товар</th>
-                            <th>Артикул</th>
-                            <th>Склад</th>
-                            <th class="text-center">Текущий остаток</th>
-                            <th class="text-center">Минимальный порог</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items %}
-                        <tr>
-                            <td>{{ item.product__product_name }}</td>
-                            <td>{{ item.product__serial_number }}</td>
-                            <td>{{ item.warehouse__name }}</td>
-                            <td class="text-center"><span class="badge bg-danger">{{ item.quantity }}</span></td>
-                            <td class="text-center">{{ item.product__minimum_stock_level }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="alert alert-success text-center" role="alert">
-                Всех товаров на складе достаточно. Товаров для закупки нет.
-            </div>
-        {% endif %}
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Артикул</th>
+                        <th>Склад</th>
+                        <th>Текущий остаток</th>
+                        <th>Минимальный остаток</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.product__product_name }}</td>
+                        <td>{{ item.product__serial_number }}</td>
+                        <td>{{ item.warehouse__name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.product__minimum_stock_level }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Все товары в достаточном количестве.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
