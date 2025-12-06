@@ -18,13 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 from dashboard.views import custom_logout, permission_denied_view
-from inventory.views import CustomLoginView
+from inventory import views as inventory_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Аутентификация и права доступа
-    path('accounts/login/', CustomLoginView.as_view(), name='login'),
+    path('accounts/login/', inventory_views.CustomLoginView.as_view(), name='login'),
     path('accounts/logout/', custom_logout, name='logout'),
     path('permission-denied/', permission_denied_view, name='permission_denied'),
     path('accounts/', include('django.contrib.auth.urls')),
