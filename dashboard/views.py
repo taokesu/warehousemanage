@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required, user_passes_test
-from inventory.models import Stock, Document, OutgoingItem, OutgoingTransaction
+# from inventory.models import Stock, Document, OutgoingItem, OutgoingTransaction
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from datetime import date, timedelta
 from django.http import JsonResponse
@@ -42,32 +42,32 @@ def dashboard_view(request):
     """Отображает главную панель для менеджера."""
     today = date.today()
 
-    # Данные для карточек KPI
-    outgoing_docs_today = OutgoingTransaction.objects.filter(document__document_date__date=today)
-    sales_items_today = OutgoingItem.objects.filter(outgoing_transaction__document__document_date__date=today)
+    # # Данные для карточек KPI
+    # outgoing_docs_today = OutgoingTransaction.objects.filter(document__document_date__date=today)
+    # sales_items_today = OutgoingItem.objects.filter(outgoing_transaction__document__document_date__date=today)
 
-    today_revenue = sales_items_today.annotate(
-        revenue=ExpressionWrapper(F('quantity') * F('product__selling_price'), output_field=DecimalField())
-    ).aggregate(total_revenue=Sum('revenue'))['total_revenue'] or 0
+    # today_revenue = sales_items_today.annotate(
+    #     revenue=ExpressionWrapper(F('quantity') * F('product__selling_price'), output_field=DecimalField())
+    # ).aggregate(total_revenue=Sum('revenue'))['total_revenue'] or 0
 
-    today_orders_count = outgoing_docs_today.count()
-    today_products_sold_count = sales_items_today.aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-    today_new_customers = "N/A" # Заглушка
-    today_profit = sales_items_today.annotate(
-        profit=ExpressionWrapper((F('product__selling_price') - F('product__purchase_price')) * F('quantity'), output_field=DecimalField())
-    ).aggregate(total_profit=Sum('profit'))['total_profit'] or 0
+    # today_orders_count = outgoing_docs_today.count()
+    # today_products_sold_count = sales_items_today.aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+    # today_new_customers = "N/A" # Заглушка
+    # today_profit = sales_items_today.annotate(
+    #     profit=ExpressionWrapper((F('product__selling_price') - F('product__purchase_price')) * F('quantity'), output_field=DecimalField())
+    # ).aggregate(total_profit=Sum('profit'))['total_profit'] or 0
 
-    low_stock_products = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')).select_related('product', 'warehouse')
-    recent_documents = Document.objects.order_by('-document_date')[:7]
+    # low_stock_products = Stock.objects.filter(quantity__lte=F('product__minimum_stock_level')).select_related('product', 'warehouse')
+    # recent_documents = Document.objects.order_by('-document_date')[:7]
 
     context = {
-        'today_revenue': today_revenue,
-        'today_orders_count': today_orders_count,
-        'today_products_sold_count': today_products_sold_count,
-        'today_new_customers': today_new_customers,
-        'today_profit': today_profit,
-        'low_stock_products': low_stock_products,
-        'recent_documents': recent_documents,
+        # 'today_revenue': today_revenue,
+        # 'today_orders_count': today_orders_count,
+        # 'today_products_sold_count': today_products_sold_count,
+        # 'today_new_customers': today_new_customers,
+        # 'today_profit': today_profit,
+        # 'low_stock_products': low_stock_products,
+        # 'recent_documents': recent_documents,
         'page_title': "Dashboard Overview"
     }
 
@@ -82,17 +82,17 @@ def revenue_chart_data(request):
     
     revenue_by_day = { (start_date + timedelta(days=i)).strftime('%Y-%m-%d'): 0 for i in range(7) }
 
-    sales_data = OutgoingItem.objects.filter(
-        outgoing_transaction__document__document_date__date__gte=start_date
-    ).annotate(
-        sale_date=F('outgoing_transaction__document__document_date__date'),
-        revenue=ExpressionWrapper(F('quantity') * F('product__selling_price'), output_field=DecimalField())
-    ).values('sale_date').annotate(daily_revenue=Sum('revenue')).order_by('sale_date')
+    # sales_data = OutgoingItem.objects.filter(
+    #     outgoing_transaction__document__document_date__date__gte=start_date
+    # ).annotate(
+    #     sale_date=F('outgoing_transaction__document__document_date__date'),
+    #     revenue=ExpressionWrapper(F('quantity') * F('product__selling_price'), output_field=DecimalField())
+    # ).values('sale_date').annotate(daily_revenue=Sum('revenue')).order_by('sale_date')
 
-    for entry in sales_data:
-        day_str = entry['sale_date'].strftime('%Y-%m-%d')
-        if day_str in revenue_by_day:
-            revenue_by_day[day_str] = entry['daily_revenue']
+    # for entry in sales_data:
+    #     day_str = entry['sale_date'].strftime('%Y-%m-%d')
+    #     if day_str in revenue_by_day:
+    #         revenue_by_day[day_str] = entry['daily_revenue']
             
     labels = list(revenue_by_day.keys())
     data = list(revenue_by_day.values())
