@@ -124,24 +124,12 @@ def inventory_turnover_report(request):
     """
     Отчет по движению товаров за период.
     """
-    incoming = IncomingItem.objects.values('product__product_name', 'product__serial_number').annotate(total_incoming=Sum('quantity')).order_by()
-    outgoing = OutgoingItem.objects.values('product__product_name', 'product__serial_number').annotate(total_outgoing=Sum('quantity')).order_by()
-    
-    turnover_data = {}
-    for item in incoming:
-        product_name = item['product__product_name']
-        if product_name not in turnover_data:
-            turnover_data[product_name] = {'incoming': 0, 'outgoing': 0, 'serial_number': item['product__serial_number']}
-        turnover_data[product_name]['incoming'] += item['total_incoming']
-
-    for item in outgoing:
-        product_name = item['product__product_name']
-        if product_name not in turnover_data:
-            turnover_data[product_name] = {'incoming': 0, 'outgoing': 0, 'serial_number': item['product__serial_number']}
-        turnover_data[product_name]['outgoing'] += item['total_outgoing']
+    incoming = IncomingItem.objects.values('product__product_name').annotate(total_incoming=Sum('quantity')).order_by()
+    outgoing = OutgoingItem.objects.values('product__product_name').annotate(total_outgoing=Sum('quantity')).order_by()
 
     context = {
-        'turnover_data': turnover_data,
+        'incoming_items': incoming,
+        'outgoing_items': outgoing,
         'report_title': 'Отчет по движению товаров'
     }
     
