@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+
+    <h3>Сводка</h3>
+    <p>Общая выручка: {{ total_revenue|floatformat:2 }} руб.</p>
+    <p>Себестоимость: {{ total_cogs|floatformat:2 }} руб.</p>
+    <p>Валовая прибыль: {{ gross_profit|floatformat:2 }} руб.</p>
+    <p>Количество продаж: {{ total_sales }}</p>
+
+    <h3>Топ-5 самых продаваемых товаров</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Продано (шт)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in top_selling_products %}
+            <tr>
+                <td>{{ product.product__product_name }}</td>
+                <td>{{ product.total_quantity }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2">Нет данных.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Топ-5 самых прибыльных товаров</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Прибыль (руб)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in top_profitable_products %}
+            <tr>
+                <td>{{ product.product__product_name }}</td>
+                <td>{{ product.total_profit|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2">Нет данных.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

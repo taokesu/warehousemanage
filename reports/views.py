@@ -85,6 +85,17 @@ def stock_report(request):
         'total_items': total_items,
         'total_products': Product.objects.count(),
     }
+
+    if 'pdf' in request.GET:
+        pdf = render_to_pdf('reports/pdf/stock_report_pdf.html', context)
+        if pdf:
+            response = HttpResponse(pdf, content_type='application/pdf')
+            filename = "stock_report.pdf"
+            content = f"attachment; filename='{filename}'"
+            response['Content-Disposition'] = content
+            return response
+        return HttpResponse("Ошибка генерации PDF", status=500)
+
     return render(request, 'reports/stock_report.html', context)
 
 @login_required
@@ -116,6 +127,17 @@ def sales_profitability_report(request):
         'top_selling_products': top_selling_products,
         'top_profitable_products': top_profitable_products,
     }
+
+    if 'pdf' in request.GET:
+        pdf = render_to_pdf('reports/pdf/sales_profitability_report_pdf.html', context)
+        if pdf:
+            response = HttpResponse(pdf, content_type='application/pdf')
+            filename = "sales_profitability_report.pdf"
+            content = f"attachment; filename='{filename}'"
+            response['Content-Disposition'] = content
+            return response
+        return HttpResponse("Ошибка генерации PDF", status=500)
+
     return render(request, 'reports/sales_profitability_report.html', context)
 
 

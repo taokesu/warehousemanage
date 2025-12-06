@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_title }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+    
+    <h3>Сводка</h3>
+    <p>Общая стоимость остатков: {{ total_stock_value|floatformat:2 }} руб.</p>
+    <p>Всего единиц на складе: {{ total_items }} шт.</p>
+    <p>Всего уникальных товаров (SKU): {{ total_products }}</p>
+
+    <h3>Полная сводка по остаткам</h3>
+    {% if items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Артикул</th>
+                <th>Склад</th>
+                <th style="text-align: center;">Текущий остаток</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product.product_name }}</td>
+                <td>{{ item.product.serial_number }}</td>
+                <td>{{ item.warehouse.name }}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>На складах нет товаров.</p>
+    {% endif %}
+</body>
+</html>
