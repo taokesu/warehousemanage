@@ -1,4 +1,34 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+class Role(models.Model):
+    role_name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.role_name
+
+class Staff(AbstractUser):
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Добавляем related_name, чтобы избежать конфликтов с базовой моделью User
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text=
+            'The groups this user belongs to. A user will get all permissions '
+            'granted to each of their groups.',
+        related_name="staff_groups",
+        related_query_name="staff",
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="staff_user_permissions",
+        related_query_name="staff",
+    )
 
 class Supplier(models.Model):
     name = models.CharField(max_length=255)
