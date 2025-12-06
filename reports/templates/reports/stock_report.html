@@ -8,7 +8,7 @@
 {% block content %}
 <div class="row">
     <div class="col-md-4">
-        <div class="card text-white bg-dark mb-3">
+        <div class="card text-white bg-primary mb-3">
             <div class="card-header">Общая стоимость остатков</div>
             <div class="card-body">
                 <h4 class="card-title">{{ total_stock_value|intcomma }} руб.</h4>
@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
+        <div class="card text-white bg-success mb-3">
             <div class="card-header">Всего единиц на складе</div>
             <div class="card-body">
                 <h4 class="card-title">{{ total_items|intcomma }} шт.</h4>
@@ -24,7 +24,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-white bg-danger mb-3">
+        <div class="card text-white bg-info mb-3">
             <div class="card-header">Всего уникальных товаров (SKU)</div>
             <div class="card-body">
                 <h4 class="card-title">{{ total_products }}</h4>
