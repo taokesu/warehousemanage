@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.views import LoginView
 from django.views import View
 from .models import (
     Document, Transaction, Inventory, Product, Warehouse
@@ -11,6 +12,11 @@ from xhtml2pdf import pisa
 from django.views.generic import ListView
 from django.db.models import Sum
 from django.db import transaction as db_transaction
+
+
+class CustomLoginView(LoginView):
+    template_name = 'registration/login.html'
+    redirect_authenticated_user = True
 
 
 @login_required
