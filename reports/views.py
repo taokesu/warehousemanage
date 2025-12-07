@@ -1,82 +1,137 @@
 from django.shortcuts import render
-from django.db.models import F, Sum, Count, ExpressionWrapper, DecimalField
-# from inventory.models import Stock, OutgoingItem, IncomingItem, Product
-# from inventory.utils import render_to_pdf
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+from inventory.models import Stock, IncomingItem, OutgoingItem, Product
+from django.views.generic import ListView
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+import os
+from django.conf import settings
+
+def is_manager(user):
+    return user.is_authenticated and hasattr(user, 'role') and user.role.role_name == 'Менеджер'
 
 @login_required
+@user_passes_test(is_manager)
 def report_list(request):
-    """
-    Отображает список всех доступных отчетов.
-    """
-    reports = [
-        {
-            'url': 'reports:low_stock_report',
-            'title': 'Отчет по товарам, требующим закупки',
-            'description': 'Показывает все товары на складе, количество которых меньше или равно минимальному порогу.'
-        },
-        {
-            'url': 'reports:stock_report', 
-            'title': 'Отчет по остаткам товаров',
-            'description': 'Полная сводка по текущим остаткам всех товаров на всех складах.'
-        },
-        {
-            'url': 'reports:sales_profitability_report',
-            'title': 'Отчет по продажам и рентабельности',
-            'description': 'Анализ продаж, прибыли и популярных товаров за период.'
-        },
-        {
-            'url': 'reports:inventory_turnover_report',
-            'title': 'Отчет по движению товаров',
-            'description': 'Анализ поступлений и отгрузок товаров за период.'
-        }
-    ]
-    context = {
-        'report_title': 'Список отчетов',
-        'reports': reports
-    }
-    return render(request, 'reports/report_list.html', context)
+    return render(request, 'reports/report_list.html')
 
 @login_required
-def low_stock_report(request):
-    context = {
-        'items': [],
-        'report_title': 'Отчет по товарам, требующим закупки'
-    }
-    return render(request, 'reports/low_stock_report.html', context)
-
-
-@login_required
+@user_passes_test(is_manager)
 def stock_report(request):
+    stocks = Stock.objects.select_related('product', 'warehouse').order_by('warehouse__name', 'product__name')
     context = {
-        'items': [],
-        'report_title': 'Отчет по остаткам товаров',
-        'total_stock_value': 0,
-        'total_items': 0,
-        'total_products': 0,
+        'stocks': stocks
     }
     return render(request, 'reports/stock_report.html', context)
 
 @login_required
-def sales_profitability_report(request):
+@user_passes_test(is_manager)
+def low_stock_report(request):
+    low_stocks = Stock.objects.filter(quantity__lt=F('product__minimum_stock_level')).select_related('product', 'warehouse')
     context = {
-        'report_title': 'Отчет по продажам и рентабельности',
-        'total_revenue': 0,
-        'total_cogs': 0,
-        'gross_profit': 0,
-        'total_sales': 0,
-        'top_selling_products': [],
-        'top_profitable_products': [],
+        'low_stocks': low_stocks
+    }
+    return render(request, 'reports/low_stock_report.html', context)
+
+@login_required
+@user_passes_test(is_manager)
+def inventory_turnover_report(request):
+    # Эта логика может быть сложной и требует более детального анализа данных
+    # Ниже представлен упрощенный пример
+    total_cost_of_goods_sold = OutgoingItem.objects.aggregate(
+        total_cogs=Sum(F('quantity') * F('item__purchase_price'))
+    )['total_cogs'] or 0
+    
+    average_inventory_cost = (Stock.objects.aggregate(
+        avg_inv=Sum(F('quantity') * F('product__purchase_price'))
+    )['avg_inv'] or 0) / 2 # Упрощенный расчет среднего запаса
+
+    turnover_ratio = total_cost_of_goods_sold / average_inventory_cost if average_inventory_cost else 0
+
+    context = {
+        'turnover_ratio': turnover_ratio
+    }
+    return render(request, 'reports/inventory_turnover_report.html', context)
+
+@login_required
+@user_passes_test(is_manager)
+def sales_profitability_report(request):
+    sales = OutgoingItem.objects.annotate(
+        profit=ExpressionWrapper(
+            F('item__selling_price') - F('item__purchase_price'),
+            output_field=DecimalField()
+        )
+    ).select_related('item__product')
+
+    context = {
+        'sales': sales
     }
     return render(request, 'reports/sales_profitability_report.html', context)
 
 
-@login_required
-def inventory_turnover_report(request):
-    context = {
-        'incoming_items': [],
-        'outgoing_items': [],
-        'report_title': 'Отчет по движению товаров'
-    }
-    return render(request, 'reports/inventory_turnover_report.html', context)
+class ReportPDFView(View):
+    template_name = None
+    pdf_filename = 'report.pdf'
+
+    def get_context_data(self, **kwargs):
+        return {}
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        template = get_template(self.template_name)
+        html = template.render(context)
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{self.pdf_filename}"'
+
+        # Путь к шрифту
+        font_path = os.path.join(settings.STATICFILES_DIRS[0], 'fonts', 'LiberationSans-Regular.ttf')
+
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, 
+            link_callback=lambda uri, rel: os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, "")), 
+            encoding='UTF-8', 
+            default_font='LiberationSans',
+            font_config=pisa.pisaFontData(font_path)
+        )
+
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
+
+class StockReportPDF(ReportPDFView):
+    template_name = 'reports/pdf/stock_report_pdf.html'
+    pdf_filename = 'stock_report.pdf'
+
+    def get_context_data(self, **kwargs):
+        return {'stocks': Stock.objects.select_related('product', 'warehouse').all()}
+
+class LowStockReportPDF(ReportPDFView):
+    template_name = 'reports/pdf/low_stock_report_pdf.html'
+    pdf_filename = 'low_stock_report.pdf'
+
+    def get_context_data(self, **kwargs):
+        return {'low_stocks': Stock.objects.filter(quantity__lt=10).select_related('product', 'warehouse')}
+
+class InventoryTurnoverReportPDF(ReportPDFView):
+    template_name = 'reports/pdf/inventory_turnover_report_pdf.html'
+    pdf_filename = 'inventory_turnover_report.pdf'
+
+    def get_context_data(self, **kwargs):
+        # Упрощенная логика, как и в веб-версии
+        total_cogs = OutgoingItem.objects.aggregate(total_cogs=Sum(F('quantity') * F('item__purchase_price'))).get('total_cogs', 0) or 0
+        avg_inv_cost = (Stock.objects.aggregate(avg_inv=Sum(F('quantity') * F('product__purchase_price'))).get('avg_inv', 0) or 0) / 2
+        turnover_ratio = total_cogs / avg_inv_cost if avg_inv_cost else 0
+        return {'turnover_ratio': turnover_ratio}
+
+class SalesProfitabilityReportPDF(ReportPDFView):
+    template_name = 'reports/pdf/sales_profitability_report_pdf.html'
+    pdf_filename = 'sales_profitability_report.pdf'
+
+    def get_context_data(self, **kwargs):
+        sales = OutgoingItem.objects.annotate(
+            profit=ExpressionWrapper(F('item__selling_price') - F('item__purchase_price'), output_field=DecimalField())
+        ).select_related('item__product')
+        return {'sales': sales}
