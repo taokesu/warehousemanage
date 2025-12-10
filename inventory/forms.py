@@ -1,7 +1,11 @@
+
 from django import forms
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from .models import Staff, Product, Supplier, Warehouse, Client
+from .models import (
+    Staff, Product, Supplier, Warehouse, Client, 
+    IncomingTransaction, OutgoingTransaction, IncomingItem, OutgoingItem
+)
 
 # Форма для аутентификации
 class CustomAuthenticationForm(forms.Form):
@@ -49,49 +53,43 @@ class CustomAuthenticationForm(forms.Form):
         return "Введите правильные имя пользователя и пароль. Поля чувствительны к регистру."
 
 
-# Форма для операций прихода
-class IncomingForm(forms.Form):
-    product = forms.ModelChoiceField(
-        queryset=Product.objects.all(), 
-        label="Товар",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    supplier = forms.ModelChoiceField(
-        queryset=Supplier.objects.all(), 
-        label="Поставщик",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.all(), 
-        label="Склад",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    quantity = forms.IntegerField(
-        min_value=1, 
-        label="Количество",
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
+# Форма для "шапки" документа прихода
+class IncomingDocForm(forms.ModelForm):
+    class Meta:
+        model = IncomingTransaction
+        fields = ['supplier', 'warehouse']
+        widgets = {
+            'supplier': forms.Select(attrs={'class': 'form-select'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+# Форма для одной товарной позиции в документе прихода
+class IncomingItemForm(forms.ModelForm):
+    class Meta:
+        model = IncomingItem
+        fields = ['product', 'quantity']
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-select product-selector'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+        }
 
 
-# Форма для операций расхода
-class OutgoingForm(forms.Form):
-    product = forms.ModelChoiceField(
-        queryset=Product.objects.all(), 
-        label="Товар",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    client = forms.ModelChoiceField(
-        queryset=Client.objects.all(), 
-        label="Клиент",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.all(), 
-        label="Склад",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    quantity = forms.IntegerField(
-        min_value=1, 
-        label="Количество",
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
+# Форма для "шапки" документа расхода
+class OutgoingDocForm(forms.ModelForm):
+    class Meta:
+        model = OutgoingTransaction
+        fields = ['client', 'warehouse']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+# Форма для одной товарной позиции в документе расхода
+class OutgoingItemForm(forms.ModelForm):
+    class Meta:
+        model = OutgoingItem
+        fields = ['product', 'quantity']
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-select product-selector'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+        }

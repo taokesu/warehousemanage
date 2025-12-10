@@ -8,10 +8,16 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.http import HttpResponse
+from django.forms import formset_factory
 
-from .models import Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, IncomingItem, OutgoingTransaction, OutgoingItem, Client
-from .forms import IncomingForm, OutgoingForm, CustomAuthenticationForm
-from .utils import render_to_pdf # Убедимся, что импортируем нашу новую утилиту
+from .models import (
+    Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, 
+    IncomingItem, OutgoingTransaction, OutgoingItem, Client
+)
+from .forms import (
+    IncomingDocForm, IncomingItemForm, OutgoingDocForm, OutgoingItemForm, CustomAuthenticationForm
+)
+from .utils import render_to_pdf
 
 
 class CustomLoginView(LoginView):
@@ -29,79 +35,113 @@ class CustomLoginView(LoginView):
                     return reverse_lazy('storekeeper_dashboard')
         return reverse_lazy('permission_denied')
 
+
 def stock_list(request):
     stocks = Stock.objects.select_related('product', 'warehouse').all()
     return render(request, 'inventory/stock_list.html', {'stocks': stocks})
 
-def incoming_transaction_view(request):
-    if request.method == 'POST':
-        form = IncomingForm(request.POST)
-        if form.is_valid():
-            product = form.cleaned_data['product']
-            supplier = form.cleaned_data['supplier']
-            warehouse = form.cleaned_data['warehouse']
-            quantity = form.cleaned_data['quantity']
 
+@login_required
+def incoming_transaction_view(request):
+    ItemFormSet = formset_factory(IncomingItemForm, extra=1) # extra=1 - одна пустая форма по умолчанию
+
+    if request.method == 'POST':
+        doc_form = IncomingDocForm(request.POST)
+        item_formset = ItemFormSet(request.POST, prefix='items')
+
+        if doc_form.is_valid() and item_formset.is_valid():
             try:
                 with transaction.atomic():
                     doc = Document.objects.create(
                         staff=request.user, 
                         document_type=Document.DocumentType.INCOMING
                     )
-                    incoming_trans = IncomingTransaction.objects.create(
-                        document=doc,
-                        supplier=supplier,
-                        warehouse=warehouse
-                    )
-                    IncomingItem.objects.create(
-                        incoming_transaction=incoming_trans,
-                        product=product,
-                        quantity=quantity
-                    )
-                    incoming_trans.total_amount = product.purchase_price * quantity
+                    incoming_trans = doc_form.save(commit=False)
+                    incoming_trans.document = doc
+                    incoming_trans.save()
+
+                    total_amount = 0
+                    for item_form in item_formset:
+                        if item_form.cleaned_data: # Проверяем, что форма не пустая
+                            item = item_form.save(commit=False)
+                            item.incoming_transaction = incoming_trans
+                            item.save()
+                            total_amount += item.line_total_purchase
+                    
+                    incoming_trans.total_amount = total_amount
                     incoming_trans.save()
 
                 return redirect('document_list')
             except Exception as e:
-                form.add_error(None, f"Произошла ошибка при обработке транзакции: {e}")
+                doc_form.add_error(None, f"Произошла ошибка при обработке транзакции: {e}")
     else:
-        form = IncomingForm()
-    return render(request, 'inventory/incoming_form.html', {'form': form})
+        doc_form = IncomingDocForm()
+        item_formset = ItemFormSet(prefix='items')
 
+    context = {
+        'doc_form': doc_form,
+        'item_formset': item_formset,
+        'form_title': 'Новый приходный документ',
+        'form_action': reverse_lazy('incoming_transaction')
+    }
+    return render(request, 'inventory/transaction_form.html', context)
+
+
+@login_required
 def outgoing_transaction_view(request):
-    if request.method == 'POST':
-        form = OutgoingForm(request.POST)
-        if form.is_valid():
-            product = form.cleaned_data['product']
-            client = form.cleaned_data['client']
-            warehouse = form.cleaned_data['warehouse']
-            quantity = form.cleaned_data['quantity']
+    ItemFormSet = formset_factory(OutgoingItemForm, extra=1)
 
+    if request.method == 'POST':
+        doc_form = OutgoingDocForm(request.POST)
+        item_formset = ItemFormSet(request.POST, prefix='items')
+
+        if doc_form.is_valid() and item_formset.is_valid():
             try:
                 with transaction.atomic():
                     doc = Document.objects.create(
                         staff=request.user,
                         document_type=Document.DocumentType.OUTGOING
                     )
-                    outgoing_trans = OutgoingTransaction.objects.create(
-                        document=doc,
-                        client=client,
-                        warehouse=warehouse
-                    )
-                    OutgoingItem.objects.create(
-                        outgoing_transaction=outgoing_trans,
-                        product=product,
-                        quantity=quantity
-                    )
-                    outgoing_trans.total_amount = product.selling_price * quantity
+                    outgoing_trans = doc_form.save(commit=False)
+                    outgoing_trans.document = doc
+                    outgoing_trans.save()
+
+                    total_amount = 0
+                    for item_form in item_formset:
+                        if item_form.cleaned_data:
+                            # Проверка остатков на складе
+                            product = item_form.cleaned_data['product']
+                            quantity = item_form.cleaned_data['quantity']
+                            stock = Stock.objects.filter(product=product, warehouse=outgoing_trans.warehouse).first()
+                            if not stock or stock.quantity < quantity:
+                                raise ValidationError(f'Недостаточно товара {product.product_name} на складе {outgoing_trans.warehouse.name}.')
+
+                            item = item_form.save(commit=False)
+                            item.outgoing_transaction = outgoing_trans
+                            item.save()
+                            total_amount += item.line_total_selling
+
+                    outgoing_trans.total_amount = total_amount
                     outgoing_trans.save()
 
                 return redirect('document_list')
+
+            except ValidationError as e:
+                doc_form.add_error(None, e.message)
             except Exception as e:
-                form.add_error(None, f"Произошла непредвиденная ошибка: {e}")
+                doc_form.add_error(None, f"Произошла непредвиденная ошибка: {e}")
     else:
-        form = OutgoingForm()
-    return render(request, 'inventory/outgoing_form.html', {'form': form})
+        doc_form = OutgoingDocForm()
+        item_formset = ItemFormSet(prefix='items')
+
+    context = {
+        'doc_form': doc_form,
+        'item_formset': item_formset,
+        'form_title': 'Новый расходный документ',
+        'form_action': reverse_lazy('outgoing_transaction')
+    }
+    return render(request, 'inventory/transaction_form.html', context)
+
 
 def document_list(request):
     document_list = Document.objects.select_related('staff').all().order_by('-document_date')
@@ -140,9 +180,6 @@ def document_detail(request, document_id):
 
 @login_required
 def document_pdf_view(request, document_id):
-    """
-    Генерирует PDF-версию для указанного документа.
-    """
     document = get_object_or_404(Document, pk=document_id)
     transaction_details = None
     items = []
@@ -153,7 +190,6 @@ def document_pdf_view(request, document_id):
             items = transaction_details.items.select_related('product').all()
         except Document.incomingtransaction.RelatedObjectDoesNotExist:
             pass
-            
     elif document.document_type == Document.DocumentType.OUTGOING:
         try:
             transaction_details = document.outgoingtransaction
@@ -161,22 +197,18 @@ def document_pdf_view(request, document_id):
         except Document.outgoingtransaction.RelatedObjectDoesNotExist:
             pass
 
-    # ИЗМЕНЕНО: Контекст стал намного проще. 
-    # WeasyPrint сам найдет статические файлы.
     context = {
         'document': document,
         'transaction': transaction_details,
         'items': items,
     }
     
-    pdf = render_to_pdf('inventory/pdf/document_pdf.html', context)
+    pdf_content = render_to_pdf('inventory/pdf/document_pdf.html', context)
     
-    if pdf and pdf.status_code == 200:
+    if pdf_content:
+        response = HttpResponse(pdf_content, content_type='application/pdf')
         filename = f"document_{document.pk}_{document.document_date.strftime('%Y-%m-%d')}.pdf"
-        # Изменено: content-disposition теперь устанавливается по-другому, так как утилита возвращает HttpResponse
-        pdf['Content-Disposition'] = f"attachment; filename='{filename}'"
-        return pdf
+        response['Content-Disposition'] = f"attachment; filename='{filename}'"
+        return response
     
-    # Если render_to_pdf вернул ошибку, мы просто вернем этот ответ пользователю
-    return pdf if pdf else HttpResponse("Неизвестная ошибка при генерации PDF.", status=500)
-
+    return HttpResponse("Ошибка при генерации PDF.", status=500)

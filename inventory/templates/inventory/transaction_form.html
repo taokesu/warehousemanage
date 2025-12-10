@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ form_title }}</h2>
+    <form method="post" action="{{ form_action }}" id="transaction-form">
+        {% csrf_token %}
+        
+        <div class="card mb-4">
+            <div class="card-header">Общая информация</div>
+            <div class="card-body">
+                {{ doc_form|crispy }}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Товары</div>
+            <div class="card-body">
+                {{ item_formset.management_form }}
+                <div id="item-forms-container">
+                    {% for form in item_formset.forms %}
+                        <div class="item-form mb-3 p-3 border rounded">
+                            <div class="row">
+                                <div class="col-md-6">{{ form.product|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.quantity|as_crispy_field }}</div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger remove-form">Удалить</button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-form" class="btn btn-success">Добавить товар</button>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{% url 'document_list' %}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+
+    <!-- Скрытый шаблон для новой формы -->
+    <div id="empty-form" style="display: none;">
+        <div class="item-form mb-3 p-3 border rounded">
+            <div class="row">
+                <div class="col-md-6">{{ item_formset.empty_form.product|as_crispy_field }}</div>
+                <div class="col-md-4">{{ item_formset.empty_form.quantity|as_crispy_field }}</div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger remove-form">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addFormBtn = document.getElementById('add-form');
+        const formContainer = document.getElementById('item-forms-container');
+        const emptyFormTemplate = document.getElementById('empty-form').innerHTML;
+        const totalFormsInput = document.querySelector('#id_items-TOTAL_FORMS');
+        let formNum = {{ item_formset.total_form_count }};
+
+        addFormBtn.addEventListener('click', function() {
+            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formNum);
+            const newForm = document.createElement('div');
+            newForm.innerHTML = newFormHtml;
+            formContainer.appendChild(newForm.firstElementChild);
+            totalFormsInput.value = parseInt(totalFormsInput.value) + 1;
+            formNum++;
+        });
+
+        formContainer.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-form')) {
+                e.target.closest('.item-form').remove();
+                // Важно: Django formsets не уменьшает TOTAL_FORMS при удалении.
+                // Он определяет, какие формы были удалены, по отсутствию их данных в POST.
+                // Так что нам не нужно вручную уменьшать счетчик.
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
