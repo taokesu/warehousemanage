@@ -13,8 +13,8 @@
                 Создать документ
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="{% url 'incoming_transaction_create' %}">Приход</a></li>
-                <li><a class="dropdown-item" href="{% url 'outgoing_transaction_create' %}">Расход</a></li>
+                <li><a class="dropdown-item" href="{% url 'incoming_transaction' %}">Приход</a></li>
+                <li><a class="dropdown-item" href="{% url 'outgoing_transaction' %}">Расход</a></li>
             </ul>
         </div>
     </div>
@@ -31,7 +31,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {# ИСПРАВЛЕНО: Использование правильной переменной `page_obj` из контекста #}
                     {% for doc in page_obj %}
                     <tr>
                         <td>{{ doc.get_document_type_display }}</td>
@@ -49,7 +48,6 @@
             </table>
         </div>
 
-        {# Пагинация #}
         {% if page_obj.has_other_pages %}
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center">
