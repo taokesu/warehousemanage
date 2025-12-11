@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from .models import (
-    Product, Warehouse, Document, Stock, Role, Supplier, Client, ProductCategory
+    Product, Warehouse, Document, Stock, Role, Supplier, Client, ProductCategory,
+    LogIncoming, LogOutgoing, LogStock
 )
 
 # Используем кастомную модель пользователя
@@ -73,9 +74,8 @@ class InventoryTests(TestCase):
             response = self.client.get(url)
             self.assertRedirects(response, f'/accounts/login/?next={url}')
 
-    def test_incoming_transaction_logic(self):
-        """Тест: создание документа прихода увеличивает остатки на складе."""
-        # Проверяем, что остатка по второму товару еще нет
+    def test_incoming_transaction_logic_and_logging(self):
+        """Тест: создание документа прихода увеличивает остатки и создает логи."""
         self.assertFalse(Stock.objects.filter(product=self.product2).exists())
 
         form_data = {
@@ -84,32 +84,38 @@ class InventoryTests(TestCase):
             'items-TOTAL_FORMS': '2',
             'items-INITIAL_FORMS': '0',
             'items-0-product': self.product1.id,
-            'items-0-quantity': '5', # Добавляем 5 шт. к существующим 10
+            'items-0-quantity': '5',
             'items-1-product': self.product2.id,
-            'items-1-quantity': '20', # Создаем новый остаток
+            'items-1-quantity': '20',
         }
 
         response = self.client.post(reverse('incoming_transaction'), data=form_data)
         self.assertRedirects(response, reverse('document_list'))
 
-        # Проверяем, что остатки на складе корректно обновились
+        # Проверка обновления остатков
         stock1 = Stock.objects.get(product=self.product1, warehouse=self.warehouse)
-        self.assertEqual(stock1.quantity, 15) # 10 (начальные) + 5 = 15
-
+        self.assertEqual(stock1.quantity, 15)
         stock2 = Stock.objects.get(product=self.product2, warehouse=self.warehouse)
         self.assertEqual(stock2.quantity, 20)
 
-        # Проверяем, что документ и связанные объекты созданы
-        self.assertEqual(Document.objects.count(), 1)
-        doc = Document.objects.first()
-        self.assertEqual(doc.document_type, 'Приход')
+        # Проверка создания документа
+        doc = Document.objects.get(document_type='Приход')
         self.assertEqual(doc.staff, self.user)
         self.assertEqual(doc.incomingtransaction.items.count(), 2)
+
+        # Проверка создания логов
+        self.assertEqual(LogIncoming.objects.count(), 1)
+        log_incoming = LogIncoming.objects.first()
+        self.assertEqual(log_incoming.incoming_transaction, doc.incomingtransaction)
+        self.assertEqual(log_incoming.user_add, self.user)
+
+        self.assertEqual(LogStock.objects.filter(operation_type='Приход').count(), 2)
+        self.assertTrue(LogStock.objects.filter(stock=stock1, operation_type='Приход', details='Приход товара: 5 шт.').exists())
+        self.assertTrue(LogStock.objects.filter(stock=stock2, operation_type='Приход', details='Приход товара: 20 шт.').exists())
 
     def test_outgoing_transaction_insufficient_stock(self):
         """Тест: система блокирует отгрузку при нехватке товара."""
         initial_stock_quantity = Stock.objects.get(product=self.product1).quantity
-        self.assertEqual(initial_stock_quantity, 10)
 
         form_data = {
             'client': self.client_obj.id,
@@ -117,21 +123,21 @@ class InventoryTests(TestCase):
             'items-TOTAL_FORMS': '1',
             'items-INITIAL_FORMS': '0',
             'items-0-product': self.product1.id,
-            'items-0-quantity': '11',  # Пытаемся отгрузить больше, чем есть (10)
+            'items-0-quantity': initial_stock_quantity + 1,
         }
 
         response = self.client.post(reverse('outgoing_transaction'), data=form_data)
-
-        # Проверяем, что форма отображается снова с ошибкой
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Недостаточно товара')
 
-        # Убеждаемся, что остаток на складе не изменился, и документ не создан
+        # Убеждаемся, что остаток и логи не изменились
         self.assertEqual(Stock.objects.get(product=self.product1).quantity, initial_stock_quantity)
         self.assertFalse(Document.objects.filter(document_type='Расход').exists())
+        self.assertFalse(LogOutgoing.objects.exists())
+        self.assertFalse(LogStock.objects.filter(operation_type='Расход').exists())
 
-    def test_outgoing_transaction_successful(self):
-        """Тест: успешная отгрузка товара уменьшает остатки."""
+    def test_successful_outgoing_transaction_and_logging(self):
+        """Тест: успешная отгрузка товара уменьшает остатки и создает логи."""
         initial_stock_quantity = Stock.objects.get(product=self.product1).quantity
         quantity_to_ship = 7
 
@@ -147,11 +153,21 @@ class InventoryTests(TestCase):
         response = self.client.post(reverse('outgoing_transaction'), data=form_data)
         self.assertRedirects(response, reverse('document_list'))
 
-        # Проверяем, что остаток на складе уменьшился
-        final_quantity = Stock.objects.get(product=self.product1).quantity
-        self.assertEqual(final_quantity, initial_stock_quantity - quantity_to_ship)
+        # Проверка обновления остатков
+        final_stock = Stock.objects.get(product=self.product1)
+        self.assertEqual(final_stock.quantity, initial_stock_quantity - quantity_to_ship)
 
-        # Проверяем, что документ расхода создан
-        self.assertTrue(Document.objects.filter(document_type='Расход').exists())
-        self.assertEqual(Document.objects.get(document_type='Расход').outgoingtransaction.items.count(), 1)
+        # Проверка создания документа
+        doc = Document.objects.get(document_type='Расход')
+        self.assertEqual(doc.outgoingtransaction.items.count(), 1)
 
+        # Проверка создания логов
+        self.assertEqual(LogOutgoing.objects.count(), 1)
+        log_outgoing = LogOutgoing.objects.first()
+        self.assertEqual(log_outgoing.outgoing_transaction, doc.outgoingtransaction)
+        self.assertEqual(log_outgoing.user_add, self.user)
+
+        self.assertEqual(LogStock.objects.filter(operation_type='Расход').count(), 1)
+        log_stock = LogStock.objects.get(operation_type='Расход')
+        self.assertEqual(log_stock.stock, final_stock)
+        self.assertEqual(log_stock.details, f'Расход товара: {quantity_to_ship} шт.')
