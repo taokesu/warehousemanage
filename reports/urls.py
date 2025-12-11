@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'reports'  # Объявляем пространство имен
+
 urlpatterns = [
     path('', views.report_list, name='report_list'),
     path('stock/', views.stock_report, name='stock_report'),

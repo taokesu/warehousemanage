@@ -60,7 +60,7 @@ class ReportsTests(TestCase):
         """
         Тест: страница со списком отчетов доступна менеджеру и содержит ссылки.
         """
-        response = self.client.get(reverse('report_list'))
+        response = self.client.get(reverse('reports:report_list'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'reports/report_list.html')
         # Проверяем наличие названий отчетов на странице
@@ -72,15 +72,15 @@ class ReportsTests(TestCase):
         Тест: неавторизованный пользователь перенаправляется на страницу входа.
         """
         self.client.logout()
-        response = self.client.get(reverse('report_list'))
+        response = self.client.get(reverse('reports:report_list'))
         # Проверяем редирект на страницу логина
-        self.assertRedirects(response, f"{reverse('login')}?next={reverse('report_list')}")
+        self.assertRedirects(response, f"{reverse('login')}?next={reverse('reports:report_list')}")
 
     def test_stock_report_view(self):
         """
         Тест: отчет по остаткам товаров корректно формируется и отображает данные.
         """
-        response = self.client.get(reverse('stock_report'))
+        response = self.client.get(reverse('reports:stock_report'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'reports/stock_report.html')
 
