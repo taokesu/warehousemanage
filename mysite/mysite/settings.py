@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     'inventory',
     'reports',
     'dashboard',
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -148,3 +150,7 @@ AUTH_USER_MODEL = 'inventory.Staff'
 # URL-адреса для перенаправления после входа и выхода
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Crispy Forms Settings
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
