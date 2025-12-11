@@ -85,9 +85,9 @@ class ReportsTests(TestCase):
         self.assertTemplateUsed(response, 'reports/stock_report.html')
 
         # Проверяем, что в контексте страницы есть нужные данные
-        self.assertIn('stocks', response.context)
-        stocks_in_context = response.context['stocks']
-        self.assertEqual(stocks_in_context.count(), 2)
+        self.assertIn('items', response.context)
+        items_in_context = response.context['items']
+        self.assertEqual(items_in_context.count(), 2)
 
         # Проверяем, что на отрендеренной странице есть данные наших товаров
         self.assertContains(response, 'Тестовый товар 1')
