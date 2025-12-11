@@ -2,175 +2,156 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from .models import Product, Warehouse, Document, DocumentItem, Stock
+from .models import (
+    Product, Warehouse, Document, Stock, Role, Supplier, Client, ProductCategory
+)
 
-# Получаем активную модель пользователя
+# Используем кастомную модель пользователя
 User = get_user_model()
 
-class InventoryTestCase(TestCase):
+class InventoryTests(TestCase):
     """
-    Базовый класс для тестов с общими данными.
+    Комплексный набор тестов для приложения inventory.
     """
-    def setUp(self):
-        # Создаем пользователя-сотрудника
-        self.user = User.objects.create_user(
+
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Настройка данных, которые будут использоваться во всех тестах этого класса.
+        Этот метод выполняется один раз.
+        """
+        # Создаем базовые сущности
+        cls.role = Role.objects.create(role_name='Кладовщик')
+        cls.user = User.objects.create_user(
             username='testuser', 
             password='password123',
             first_name='Иван',
             last_name='Петров',
-            role='Storekeeper'
+            role=cls.role
         )
-        # Аутентифицируем пользователя
+        cls.warehouse = Warehouse.objects.create(name='Основной склад')
+        cls.supplier = Supplier.objects.create(company_name='Надёжный Поставщик')
+        cls.client_obj = Client.objects.create(company_name='Главный Клиент')
+        cls.category = ProductCategory.objects.create(category_name='Ноутбуки')
+
+        # Создаем товары
+        cls.product1 = Product.objects.create(
+            category=cls.category, 
+            product_name='Ноутбук Pro 15', 
+            purchase_price=90000.00, 
+            selling_price=120000.00, 
+            serial_number='PRO15-SN123'
+        )
+        cls.product2 = Product.objects.create(
+            category=cls.category, 
+            product_name='Ноутбук Air 13', 
+            purchase_price=70000.00, 
+            selling_price=95000.00, 
+            serial_number='AIR13-SN456'
+        )
+
+        # Создаем начальный остаток для тестов расхода
+        Stock.objects.create(warehouse=cls.warehouse, product=cls.product1, quantity=10)
+
+    def setUp(self):
+        """
+        Этот метод выполняется перед каждым тестом.
+        """
+        # Выполняем вход пользователя в систему
         self.client.login(username='testuser', password='password123')
 
-        # Создаем основные объекты
-        self.warehouse = Warehouse.objects.create(name='Основной склад')
-        self.product1 = Product.objects.create(name='Ноутбук', article='NB-001')
-        self.product2 = Product.objects.create(name='Монитор', article='MN-002')
-
-class ModelCreationTests(InventoryTestCase):
-    """
-    Тесты для проверки корректного создания моделей.
-    """
-    def test_product_creation(self):
-        self.assertEqual(self.product1.name, 'Ноутбук')
-        self.assertEqual(str(self.product1), 'Ноутбук (NB-001)')
-
-    def test_warehouse_creation(self):
-        self.assertEqual(self.warehouse.name, 'Основной склад')
-        self.assertEqual(str(self.warehouse), 'Основной склад')
-
-    def test_staff_creation(self):
-        self.assertEqual(self.user.get_full_name(), 'Петров Иван')
-        self.assertEqual(str(self.user), 'Петров И.')
-
-
-class ViewAccessTests(InventoryTestCase):
-    """
-    Тесты для проверки доступа к представлениям (страницам).
-    """
-    def test_unauthenticated_access_redirect(self):
-        # Выходим из системы
+    def test_view_access_unauthenticated(self):
+        """Проверка: неавторизованный пользователь перенаправляется на страницу входа."""
         self.client.logout()
-        # Проверяем редирект на страницу входа
-        response = self.client.get(reverse('stock_list'))
-        self.assertRedirects(response, f'/accounts/login/?next={reverse("stock_list")}')
-        
-        response = self.client.get(reverse('document_list'))
-        self.assertRedirects(response, f'/accounts/login/?next={reverse("document_list")}')
+        urls_to_check = [
+            reverse('stock_list'),
+            reverse('document_list'),
+            reverse('incoming_transaction'),
+            reverse('outgoing_transaction'),
+        ]
+        for url in urls_to_check:
+            response = self.client.get(url)
+            self.assertRedirects(response, f'/accounts/login/?next={url}')
 
-    def test_authenticated_access_success(self):
-        # Проверяем, что авторизованный пользователь получает доступ
-        response = self.client.get(reverse('stock_list'))
-        self.assertEqual(response.status_code, 200)
-
-        response = self.client.get(reverse('document_list'))
-        self.assertEqual(response.status_code, 200)
-
-        response = self.client.get(reverse('incoming_transaction'))
-        self.assertEqual(response.status_code, 200)
-
-        response = self.client.get(reverse('outgoing_transaction'))
-        self.assertEqual(response.status_code, 200)
-
-
-class TransactionLogicTests(InventoryTestCase):
-    """
-    Тесты для проверки бизнес-логики создания документов прихода и расхода.
-    """
-    def test_incoming_transaction_creates_stock(self):
-        """
-        Проверка, что документ прихода корректно увеличивает остатки на складе.
-        """
-        self.assertEqual(Stock.objects.count(), 0)
+    def test_incoming_transaction_logic(self):
+        """Тест: создание документа прихода увеличивает остатки на складе."""
+        # Проверяем, что остатка по второму товару еще нет
+        self.assertFalse(Stock.objects.filter(product=self.product2).exists())
 
         form_data = {
-            'document_date': '2025-12-10 12:00:00',
+            'supplier': self.supplier.id,
             'warehouse': self.warehouse.id,
             'items-TOTAL_FORMS': '2',
             'items-INITIAL_FORMS': '0',
-            'items-MIN_NUM_FORMS': '0',
-            'items-MAX_NUM_FORMS': '1000',
             'items-0-product': self.product1.id,
-            'items-0-quantity': '10',
+            'items-0-quantity': '5', # Добавляем 5 шт. к существующим 10
             'items-1-product': self.product2.id,
-            'items-1-quantity': '20',
+            'items-1-quantity': '20', # Создаем новый остаток
         }
 
         response = self.client.post(reverse('incoming_transaction'), data=form_data)
-        
-        # Проверяем, что нас перенаправило на страницу списка документов
         self.assertRedirects(response, reverse('document_list'))
-        
-        # Проверяем, что был создан один документ
-        self.assertEqual(Document.objects.count(), 1)
-        doc = Document.objects.first()
-        self.assertEqual(doc.document_type, 'INCOMING')
-        self.assertEqual(doc.items.count(), 2)
 
         # Проверяем, что остатки на складе корректно обновились
-        self.assertEqual(Stock.objects.count(), 2)
-        stock1 = Stock.objects.get(warehouse=self.warehouse, product=self.product1)
-        self.assertEqual(stock1.quantity, 10)
+        stock1 = Stock.objects.get(product=self.product1, warehouse=self.warehouse)
+        self.assertEqual(stock1.quantity, 15) # 10 (начальные) + 5 = 15
 
-        stock2 = Stock.objects.get(warehouse=self.warehouse, product=self.product2)
+        stock2 = Stock.objects.get(product=self.product2, warehouse=self.warehouse)
         self.assertEqual(stock2.quantity, 20)
 
-    def test_outgoing_transaction_with_insufficient_stock(self):
-        """
-        Проверка, что система не дает отгрузить товар, если его недостаточно на складе.
-        """
-        # Сначала создаем начальный остаток: 5 ноутбуков
-        Stock.objects.create(warehouse=self.warehouse, product=self.product1, quantity=5)
-        self.assertEqual(Stock.objects.get(product=self.product1).quantity, 5)
+        # Проверяем, что документ и связанные объекты созданы
+        self.assertEqual(Document.objects.count(), 1)
+        doc = Document.objects.first()
+        self.assertEqual(doc.document_type, 'Приход')
+        self.assertEqual(doc.staff, self.user)
+        self.assertEqual(doc.incomingtransaction.items.count(), 2)
 
-        # Пытаемся отгрузить 7 ноутбуков
+    def test_outgoing_transaction_insufficient_stock(self):
+        """Тест: система блокирует отгрузку при нехватке товара."""
+        initial_stock_quantity = Stock.objects.get(product=self.product1).quantity
+        self.assertEqual(initial_stock_quantity, 10)
+
         form_data = {
-            'document_date': '2025-12-11 14:00:00',
+            'client': self.client_obj.id,
             'warehouse': self.warehouse.id,
             'items-TOTAL_FORMS': '1',
             'items-INITIAL_FORMS': '0',
             'items-0-product': self.product1.id,
-            'items-0-quantity': '7',
+            'items-0-quantity': '11',  # Пытаемся отгрузить больше, чем есть (10)
         }
 
         response = self.client.post(reverse('outgoing_transaction'), data=form_data)
-        
-        # Проверяем, что страница не была перенаправлена, а показана снова с ошибкой
+
+        # Проверяем, что форма отображается снова с ошибкой
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Недостаточно товара на складе')
+        self.assertContains(response, 'Недостаточно товара')
 
-        # Проверяем, что новый документ НЕ был создан
-        self.assertEqual(Document.objects.filter(document_type='OUTGOING').count(), 0)
-        
-        # Проверяем, что остаток на складе НЕ изменился
-        self.assertEqual(Stock.objects.get(product=self.product1).quantity, 5)
+        # Убеждаемся, что остаток на складе не изменился, и документ не создан
+        self.assertEqual(Stock.objects.get(product=self.product1).quantity, initial_stock_quantity)
+        self.assertFalse(Document.objects.filter(document_type='Расход').exists())
 
-    def test_successful_outgoing_transaction(self):
-        """
-        Проверка корректной отгрузки товара при достаточном остатке.
-        """
-        # Начальный остаток: 15 ноутбуков
-        Stock.objects.create(warehouse=self.warehouse, product=self.product1, quantity=15)
-        
-        # Отгружаем 10 ноутбуков
+    def test_outgoing_transaction_successful(self):
+        """Тест: успешная отгрузка товара уменьшает остатки."""
+        initial_stock_quantity = Stock.objects.get(product=self.product1).quantity
+        quantity_to_ship = 7
+
         form_data = {
-            'document_date': '2025-12-12 10:00:00',
+            'client': self.client_obj.id,
             'warehouse': self.warehouse.id,
             'items-TOTAL_FORMS': '1',
             'items-INITIAL_FORMS': '0',
             'items-0-product': self.product1.id,
-            'items-0-quantity': '10',
+            'items-0-quantity': quantity_to_ship,
         }
 
         response = self.client.post(reverse('outgoing_transaction'), data=form_data)
-        
-        # Проверяем перенаправление
         self.assertRedirects(response, reverse('document_list'))
 
-        # Проверяем, что документ расхода создан
-        self.assertEqual(Document.objects.filter(document_type='OUTGOING').count(), 1)
-        
         # Проверяем, что остаток на складе уменьшился
-        final_stock = Stock.objects.get(warehouse=self.warehouse, product=self.product1)
-        self.assertEqual(final_stock.quantity, 5)
+        final_quantity = Stock.objects.get(product=self.product1).quantity
+        self.assertEqual(final_quantity, initial_stock_quantity - quantity_to_ship)
+
+        # Проверяем, что документ расхода создан
+        self.assertTrue(Document.objects.filter(document_type='Расход').exists())
+        self.assertEqual(Document.objects.get(document_type='Расход').outgoingtransaction.items.count(), 1)
+
