@@ -1,16 +1,42 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-from .models import IncomingItem, OutgoingItem, Stock, LogIncoming, LogOutgoing, LogStock
-import logging
+from .models import (
+    IncomingTransaction, OutgoingTransaction, IncomingItem, OutgoingItem, 
+    Stock, LogIncoming, LogOutgoing, LogStock
+)
 
-logger = logging.getLogger(__name__)
+# --- Сигналы для логирования самих транзакций ---
+
+@receiver(post_save, sender=IncomingTransaction)
+def log_incoming_transaction(sender, instance, created, **kwargs):
+    """Создает одну запись в логе при создании новой транзакции прихода."""
+    if created:
+        LogIncoming.objects.create(
+            incoming_transaction=instance,
+            operation_type="CREATE",
+            user_add=instance.document.staff
+        )
+
+@receiver(post_save, sender=OutgoingTransaction)
+def log_outgoing_transaction(sender, instance, created, **kwargs):
+    """Создает одну запись в логе при создании новой транзакции расхода."""
+    if created:
+        LogOutgoing.objects.create(
+            outgoing_transaction=instance,
+            operation_type="CREATE",
+            user_add=instance.document.staff
+        )
+
+
+# --- Сигналы для изменения остатков и их логирования --- 
 
 @receiver(post_save, sender=IncomingItem)
-def handle_incoming_item(sender, instance, created, **kwargs):
+def handle_incoming_item_stock(sender, instance, created, **kwargs):
+    """При добавлении товара в приход, увеличивает остаток на складе и логирует это."""
     if created:
         with transaction.atomic():
-            stock, created = Stock.objects.get_or_create(
+            stock, _ = Stock.objects.get_or_create(
                 product=instance.product,
                 warehouse=instance.incoming_transaction.warehouse,
                 defaults={'quantity': 0}
@@ -25,47 +51,29 @@ def handle_incoming_item(sender, instance, created, **kwargs):
                 details=f"Приход товара: {instance.quantity} шт."
             )
 
-            LogIncoming.objects.create(
-                incoming_transaction=instance.incoming_transaction,
-                operation_type="CREATE",
-                user_add=instance.incoming_transaction.document.staff
-            )
-
 @receiver(post_save, sender=OutgoingItem)
-def handle_outgoing_item(sender, instance, created, **kwargs):
+def handle_outgoing_item_stock(sender, instance, created, **kwargs):
+    """При добавлении товара в расход, уменьшает остаток на складе и логирует это."""
     if created:
-        try:
-            with transaction.atomic():
-                stock = Stock.objects.select_for_update().get(
-                    product=instance.product,
-                    warehouse=instance.outgoing_transaction.warehouse
-                )
-
-                if stock.quantity >= instance.quantity:
-                    stock.quantity -= instance.quantity
-                    stock.save()
-
-                    LogStock.objects.create(
-                        stock=stock,
-                        operation_type="Расход",
-                        user_add=instance.outgoing_transaction.document.staff,
-                        details=f"Расход товара: {instance.quantity} шт."
-                    )
-                else:
-                    logger.warning(
-                        f"Недостаточно товара на складе для списания (Товар: {instance.product.sku}, Склад: {instance.outgoing_transaction.warehouse.name}). "
-                        f"Требуется: {instance.quantity}, в наличии: {stock.quantity}. Остаток не был изменен."
-                    )
-
-        except Stock.DoesNotExist:
-            logger.error(
-                f"Попытка списания несуществующего на складе товара (Товар: {instance.product.sku}, Склад: {instance.outgoing_transaction.warehouse.name}). "
-                f"Остаток не был изменен."
-            )
+        # Логика списания остатков перенесена во views.py для немедленной валидации.
+        # Сигнал теперь только логирует изменение, которое уже было произведено.
+        # В данном проекте основная логика списания происходит во views.py
+        # в `outgoing_transaction_view` внутри `transaction.atomic()`.
+        # Однако, если бы логика была только в сигналах, она была бы здесь.
+        # Оставляем этот сигнал для консистентности и возможного будущего расширения.
         
-        # Этот лог должен создаваться всегда, т.к. документ расхода был создан
-        LogOutgoing.objects.create(
-            outgoing_transaction=instance.outgoing_transaction,
-            operation_type="CREATE",
-            user_add=instance.outgoing_transaction.document.staff
-        )
+        # Найдем остаток, который уже должен был быть изменен во view
+        try:
+            stock = Stock.objects.get(
+                product=instance.product,
+                warehouse=instance.outgoing_transaction.warehouse
+            )
+            LogStock.objects.create(
+                stock=stock,
+                operation_type="Расход",
+                user_add=instance.outgoing_transaction.document.staff,
+                details=f"Расход товара: {instance.quantity} шт."
+            )
+        except Stock.DoesNotExist:
+            # Эта ситуация не должна произойти, если валидация во view работает правильно
+            pass 
