@@ -9,6 +9,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.forms import formset_factory
+from django.core.exceptions import ValidationError
 
 from .models import (
     Stock, Product, Warehouse, Supplier, Document, IncomingTransaction, 
@@ -35,7 +36,7 @@ class CustomLoginView(LoginView):
                     return reverse_lazy('storekeeper_dashboard')
         return reverse_lazy('permission_denied')
 
-
+@login_required
 def stock_list(request):
     stocks = Stock.objects.select_related('product', 'warehouse').all()
     return render(request, 'inventory/stock_list.html', {'stocks': stocks})
@@ -127,7 +128,7 @@ def outgoing_transaction_view(request):
                 return redirect('document_list')
 
             except ValidationError as e:
-                doc_form.add_error(None, e.message)
+                doc_form.add_error(None, e.messages)
             except Exception as e:
                 doc_form.add_error(None, f"Произошла непредвиденная ошибка: {e}")
     else:
@@ -142,7 +143,7 @@ def outgoing_transaction_view(request):
     }
     return render(request, 'inventory/transaction_form.html', context)
 
-
+@login_required
 def document_list(request):
     document_list = Document.objects.select_related('staff').all().order_by('-document_date')
     paginator = Paginator(document_list, 15)
@@ -151,6 +152,7 @@ def document_list(request):
     page_obj = paginator.get_page(page_number)
     return render(request, 'inventory/document_list.html', {'page_obj': page_obj})
 
+@login_required
 def document_detail(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
     transaction_details = None
