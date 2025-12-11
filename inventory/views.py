@@ -44,7 +44,7 @@ def stock_list(request):
 
 @login_required
 def incoming_transaction_view(request):
-    ItemFormSet = formset_factory(IncomingItemForm, extra=1) # extra=1 - одна пустая форма по умолчанию
+    ItemFormSet = formset_factory(IncomingItemForm, extra=1) 
 
     if request.method == 'POST':
         doc_form = IncomingDocForm(request.POST)
@@ -63,7 +63,7 @@ def incoming_transaction_view(request):
 
                     total_amount = 0
                     for item_form in item_formset:
-                        if item_form.cleaned_data: # Проверяем, что форма не пустая
+                        if item_form.cleaned_data:
                             item = item_form.save(commit=False)
                             item.incoming_transaction = incoming_trans
                             item.save()
@@ -110,12 +110,16 @@ def outgoing_transaction_view(request):
                     total_amount = 0
                     for item_form in item_formset:
                         if item_form.cleaned_data:
-                            # Проверка остатков на складе
                             product = item_form.cleaned_data['product']
                             quantity = item_form.cleaned_data['quantity']
-                            stock = Stock.objects.filter(product=product, warehouse=outgoing_trans.warehouse).first()
-                            if not stock or stock.quantity < quantity:
-                                raise ValidationError(f'Недостаточно товара {product.product_name} на складе {outgoing_trans.warehouse.name}.')
+                            
+                            stock = Stock.objects.select_for_update().get(product=product, warehouse=outgoing_trans.warehouse)
+
+                            if stock.quantity < quantity:
+                                raise ValidationError(f'Недостаточно товара {product.product_name} на складе {outgoing_trans.warehouse.name}. В наличии: {stock.quantity}, требуется: {quantity}')
+                            
+                            stock.quantity -= quantity
+                            stock.save()
 
                             item = item_form.save(commit=False)
                             item.outgoing_transaction = outgoing_trans
@@ -127,6 +131,8 @@ def outgoing_transaction_view(request):
 
                 return redirect('document_list')
 
+            except Stock.DoesNotExist:
+                 doc_form.add_error(None, "Одного из товаров нет на складе.")
             except ValidationError as e:
                 doc_form.add_error(None, e.messages)
             except Exception as e:
