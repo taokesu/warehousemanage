@@ -31,9 +31,9 @@ class InventoryIntegrationTests(TestCase):
             role=cls.role
         )
         cls.warehouse = Warehouse.objects.create(name='Основной склад')
-        cls.supplier = Supplier.objects.create(company_name='Надёжный Поставщик') # ИСПРАВЛЕНО
-        cls.client_obj = Client.objects.create(company_name='Главный Клиент') # ИСПРАВЛЕНО
-        cls.category = ProductCategory.objects.create(category_name='Ноутбуки') # ИСПРАВЛЕНО
+        cls.supplier = Supplier.objects.create(company_name='Надёжный Поставщик')
+        cls.client_obj = Client.objects.create(company_name='Главный Клиент')
+        cls.category = ProductCategory.objects.create(category_name='Ноутбуки')
 
         # Создаем товары
         cls.product1 = Product.objects.create(
@@ -70,7 +70,8 @@ class InventoryIntegrationTests(TestCase):
         ]
         for url in urls_to_check:
             response = self.client.get(url)
-            self.assertRedirects(response, f'/login/?next={url}')
+            # ИСПРАВЛЕНО: Указываем правильный URL для страницы входа
+            self.assertRedirects(response, f'/accounts/login/?next={url}')
 
     def test_incoming_transaction_logic_and_logging(self):
         """Тест: создание документа прихода увеличивает остатки и создает логи."""
@@ -187,4 +188,3 @@ class ModelUnitTests(TestCase):
         
         expected_str = f"Документ №{doc.id} (Приход) от {doc.document_date.strftime('%Y-%m-%d')}"
         self.assertEqual(str(doc), expected_str)
-
