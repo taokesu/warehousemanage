@@ -22,7 +22,7 @@ class InventoryIntegrationTests(TestCase):
         Этот метод выполняется один раз.
         """
         # Создаем базовые сущности
-        cls.role = Role.objects.create(role_name='Кладовщик') # ИСПРАВЛЕНО: name -> role_name
+        cls.role = Role.objects.create(role_name='Кладовщик')
         cls.user = User.objects.create_user(
             username='testuser', 
             password='password123',
@@ -31,9 +31,9 @@ class InventoryIntegrationTests(TestCase):
             role=cls.role
         )
         cls.warehouse = Warehouse.objects.create(name='Основной склад')
-        cls.supplier = Supplier.objects.create(name='Надёжный Поставщик')
-        cls.client_obj = Client.objects.create(name='Главный Клиент')
-        cls.category = ProductCategory.objects.create(name='Ноутбуки')
+        cls.supplier = Supplier.objects.create(company_name='Надёжный Поставщик') # ИСПРАВЛЕНО
+        cls.client_obj = Client.objects.create(company_name='Главный Клиент') # ИСПРАВЛЕНО
+        cls.category = ProductCategory.objects.create(category_name='Ноутбуки') # ИСПРАВЛЕНО
 
         # Создаем товары
         cls.product1 = Product.objects.create(
@@ -180,7 +180,11 @@ class ModelUnitTests(TestCase):
         
     def test_document_str_representation(self):
         """Тест: __str__ модели Document показывает его тип и номер."""
-        doc = Document(number="DOC-001") # ИСПРАВЛЕНО: document_number -> number
-        doc.document_type = "Приход"
-        self.assertEqual(str(doc), "Приход #DOC-001")
+        # ИСПРАВЛЕНО: Создаем полные объекты, необходимые для str
+        role = Role.objects.create(role_name='Тестовая роль')
+        user = User.objects.create_user(username='str_test_user', role=role)
+        doc = Document.objects.create(staff=user, document_type=Document.DocumentType.INCOMING)
+        
+        expected_str = f"Документ №{doc.id} (Приход) от {doc.document_date.strftime('%Y-%m-%d')}"
+        self.assertEqual(str(doc), expected_str)
 
