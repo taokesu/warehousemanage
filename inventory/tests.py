@@ -22,7 +22,7 @@ class InventoryIntegrationTests(TestCase):
         Этот метод выполняется один раз.
         """
         # Создаем базовые сущности
-        cls.role = Role.objects.create(name='Кладовщик')
+        cls.role = Role.objects.create(role_name='Кладовщик') # ИСПРАВЛЕНО: name -> role_name
         cls.user = User.objects.create_user(
             username='testuser', 
             password='password123',
@@ -180,9 +180,7 @@ class ModelUnitTests(TestCase):
         
     def test_document_str_representation(self):
         """Тест: __str__ модели Document показывает его тип и номер."""
-        doc = Document(document_number="DOC-001")
-        # Предполагаем, что у вас есть поле document_type, как было в ранних версиях
-        # Если его нет, тест нужно адаптировать под вашу текущую модель
+        doc = Document(number="DOC-001") # ИСПРАВЛЕНО: document_number -> number
         doc.document_type = "Приход"
         self.assertEqual(str(doc), "Приход #DOC-001")
 
