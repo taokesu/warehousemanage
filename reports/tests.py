@@ -91,6 +91,6 @@ class ReportsTests(TestCase):
 
         # Проверяем, что на отрендеренной странице есть данные наших товаров
         self.assertContains(response, 'Тестовый товар 1')
-        self.assertContains(response, '25')  # Остаток первого товара
+        self.assertContains(response, '25') 
         self.assertContains(response, 'Тестовый товар 2 (Нулевой остаток)')
-        self.assertContains(response, '0')   # Остаток второго товара
+        self.assertContains(response, '0')   
